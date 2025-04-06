@@ -6,10 +6,19 @@
     "dev": "bun run --watch src/index.ts"
   },
   "dependencies": {
-    "elysia": "latest"
+    "@coral-xyz/anchor": "^0.31.0",
+    "@solana-program/compute-budget": "^0.7.0",
+    "@solana-program/token": "^0.5.1",
+    "@solana/kit": "^2.1.0",
+    "axios": "^1.6.7",
+    "bignumber.js": "^9.2.0",
+    "bs58": "^6.0.0",
+    "elysia": "latest",
+    "ky": "^1.8.0"
   },
   "devDependencies": {
-    "bun-types": "latest"
+    "bun-types": "latest",
+    "@types/axios": "^0.14.0"
   },
   "module": "src/index.js"
 }

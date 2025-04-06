@@ -13,3 +13,5 @@ bun run dev
 ```
 
 Open http://localhost:3000/ with your browser to see the result.
+
+curl --location 'https://api.telegram.org/bot{BOTID}/setWebhook?secret_token={SECRET}' --header 'Content-Type: application/json' --data '{"url": "{URL}"}'
