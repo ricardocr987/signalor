@@ -21,7 +21,7 @@ interface ChartDataset {
 
 const parseChartCommand = (args: string[]): ChartOptions => {
   const options: ChartOptions = {
-    token: args[0].toUpperCase()
+    token: args[0]
   };
 
   // Parse additional options
@@ -83,10 +83,8 @@ const chartCommand: Command = {
       };
 
       if (options.showMa) {
-        // Calculate moving averages
         const prices = ohlcvData.data.map(d => parseFloat(d.close));
         
-        // 21 EMA
         const ema21 = calculateEMA(prices, 21);
         chartData.datasets.push({
           label: '21 EMA',
@@ -96,7 +94,6 @@ const chartCommand: Command = {
           fill: false
         });
 
-        // 50 SMA
         const sma50 = calculateSMA(prices, 50);
         chartData.datasets.push({
           label: '50 SMA',
@@ -106,7 +103,6 @@ const chartCommand: Command = {
           fill: false
         });
 
-        // 200 SMA
         const sma200 = calculateSMA(prices, 200);
         chartData.datasets.push({
           label: '200 SMA',
