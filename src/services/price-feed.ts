@@ -47,10 +47,7 @@ export class PriceFeedService {
 
   private handlePriceUpdate(symbol: string, update: any) {
     const callbacks = this.callbacks.get(symbol);
-    if (!callbacks) {
-      console.log(`No callbacks registered for ${symbol}`);
-      return;
-    }
+    if (!callbacks) return;
 
     const priceUpdate: PriceUpdate = {
       symbol,
