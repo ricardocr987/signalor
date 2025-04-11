@@ -13,6 +13,7 @@
     "axios": "^1.6.7",
     "bignumber.js": "^9.2.0",
     "bs58": "^6.0.0",
+    "chartjs-node-canvas": "^5.0.0",
     "elysia": "latest",
     "ky": "^1.8.0"
   },

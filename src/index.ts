@@ -5,6 +5,19 @@ import * as path from 'path';
 import { initDb } from './db';
 import { priceFeedService } from './services/price-feed';
 
+export interface CommandResponse {
+  chat_id: number;
+  text?: string;
+  photo?: Buffer;
+  caption?: string;
+}
+
+export interface Command {
+  name: string;
+  description: string;
+  execute: (userId: number, args?: string[]) => Promise<CommandResponse>;
+} 
+
 initDb();
 
 const app = new Elysia()
@@ -70,13 +83,6 @@ const app = new Elysia()
       console.error(error);
     }
   });
-
-// Command interface
-export interface Command {
-  name: string;
-  description: string;
-  execute: (userId: number, args?: string[]) => Promise<{ chat_id: number; text: string }>;
-}
 
 // Load commands dynamically
 const loadCommands = async (): Promise<Record<string, Command>> => {
