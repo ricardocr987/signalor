@@ -2,8 +2,8 @@ import { Elysia } from "elysia";
 import { config } from "./config";
 import * as fs from 'fs';
 import * as path from 'path';
-import { initDb } from './db';
 import { priceFeedService } from './services/price-feed';
+import { VybeService } from './services/vybe';
 
 export interface CommandResponse {
   chat_id: number;
@@ -18,14 +18,16 @@ export interface Command {
   execute: (userId: number, args?: string[]) => Promise<CommandResponse>;
 } 
 
-initDb();
-
 const app = new Elysia()
   .onStart(async () => {    
     try {
+      // Initialize price feed service
       await priceFeedService.initialize();
+      
+      // Fetch and store token data from Vybe
+      await VybeService.fetchAndStoreTokens();
     } catch (error) {
-      console.error('Failed to initialize price feed service:', error);
+      console.error('Failed to initialize services:', error);
     }
   })
   .get("/", () => "Hello Elysia")

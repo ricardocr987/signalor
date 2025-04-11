@@ -1,4 +1,21 @@
 import { config } from '../config';
+import { db } from '../db/index';
+import { tokens } from '../db/schema';
+import { eq } from 'drizzle-orm';
+
+interface VybeToken {
+  mintAddress: string;
+  name: string;
+  symbol: string;
+  decimals: number;
+  currentSupply: string;
+  marketCap: number;
+  price: number;
+  volume24h: number;
+  priceChange24h: number;
+  priceChange24hPercent: number;
+  verified: boolean;
+}
 
 interface TopHolder {
   rank: number;
@@ -77,6 +94,83 @@ interface OHLCVResponse {
 
 export class VybeService {
   private static readonly BASE_URL = 'https://api.vybenetwork.xyz';
+
+  static async fetchAndStoreTokens(): Promise<void> {
+    try {
+      console.log('Fetching tokens from Vybe...');
+      
+      const response = await fetch(`${this.BASE_URL}/tokens`, {
+        headers: {
+          'accept': 'application/json',
+          'X-API-KEY': config.VYBE_API_KEY || ''
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Vybe API error: ${response.status} ${response.statusText}`);
+      }
+
+      const tokens_data = await response.json();
+      const vybeTokens = tokens_data.data as VybeToken[];
+
+      // Clear existing tokens
+      await db.delete(tokens);
+
+      // Insert new tokens in batches
+      const batchSize = 100;
+      for (let i = 0; i < vybeTokens.length; i += batchSize) {
+        const batch = vybeTokens.slice(i, i + batchSize).map(token => ({
+          mintAddress: token.mintAddress,
+          name: token.name,
+          symbol: token.symbol,
+          decimals: token.decimals,
+          currentSupply: token.currentSupply,
+          marketCap: token.marketCap,
+          price: token.price,
+          volume24h: token.volume24h,
+          priceChange24h: token.priceChange24h,
+          priceChange24hPercent: token.priceChange24hPercent,
+          verified: token.verified
+        }));
+
+        await db.insert(tokens).values(batch);
+      }
+
+      console.log('Token data successfully stored in database');
+    } catch (error) {
+      console.error('Error fetching and storing tokens:', error);
+      throw error;
+    }
+  }
+
+  static async getTokenByMintAddress(mintAddress: string): Promise<typeof tokens.$inferSelect | null> {
+    try {
+      const result = await db.select().from(tokens).where(eq(tokens.mintAddress, mintAddress)).limit(1);
+      return result[0] || null;
+    } catch (error) {
+      console.error('Error fetching token:', error);
+      throw error;
+    }
+  }
+
+  static async getTokenBySymbol(symbol: string): Promise<typeof tokens.$inferSelect | null> {
+    try {
+      const result = await db.select().from(tokens).where(eq(tokens.symbol, symbol)).limit(1);
+      return result[0] || null;
+    } catch (error) {
+      console.error('Error fetching token:', error);
+      throw error;
+    }
+  }
+
+  static async getAllTokens(): Promise<typeof tokens.$inferSelect[]> {
+    try {
+      return await db.select().from(tokens);
+    } catch (error) {
+      console.error('Error fetching all tokens:', error);
+      throw error;
+    }
+  }
 
   static async getTopHolders(
     mintAddress: string,
