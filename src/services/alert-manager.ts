@@ -1,4 +1,4 @@
-import { Alert, createAlert, getUserAlerts, deactivateAlert, getAllActiveAlerts } from '../db';
+import { Alert, createAlert, getUserAlerts, deactivateAlert, getAllActiveAlerts } from '../db/index';
 import { priceFeedService } from './price-feed';
 import { config } from '../config';
 
@@ -15,10 +15,10 @@ export class AlertManager {
     return AlertManager.instance;
   }
 
-  public initialize() {
+  public async initialize() {
     try {
       // Load all active alerts from the database
-      const alerts = getAllActiveAlerts();
+      const alerts = await getAllActiveAlerts();
       console.log(`Loaded ${alerts.length} active alerts`);
       
       // Group alerts by symbol
@@ -83,7 +83,7 @@ export class AlertManager {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          chat_id: alert.user_id,
+          chat_id: alert.userId,
           text: message
         })
       });
@@ -98,7 +98,7 @@ export class AlertManager {
 
   async addAlert(userId: number, symbol: string, price: number, condition: 'above' | 'below'): Promise<Alert> {
     // Create alert in database
-    const alert =  createAlert(userId, symbol, price, condition);
+    const alert = await createAlert(userId, symbol, price, condition);
     
     // Add to active alerts
     if (!this.activeAlerts.has(symbol)) {

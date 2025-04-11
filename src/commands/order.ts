@@ -25,7 +25,7 @@ const orderCommand: Command = {
         }
 
         const orderList = orders.map(order => 
-          `📊 Buy ${order.amount} ${order.output_mint} with ${order.input_mint} when price goes below $${order.price}`
+          `📊 Buy ${order.amount} ${order.outputMint} with ${order.inputMint} when price goes below $${order.price}`
         ).join('\n\n');
 
         return {

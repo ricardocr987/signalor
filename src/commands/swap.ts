@@ -1,5 +1,5 @@
 import { Command } from '../';
-import { getUserByTelegramId, getKeypairByUserId } from '../db';
+import { getUserByTelegramId, getKeypairByUserId } from '../db/index';
 import { JupiterService } from '../services/jup';
 import { getTokenMetadata } from '../solana/fetcher/getTokenMetadata';
 import { validateAmount } from '../solana/validateAmount';
@@ -23,7 +23,7 @@ const swapCommand: Command = {
       }
 
       // Get user and their keypair
-      const user = getUserByTelegramId(userId);
+      const user = await getUserByTelegramId(userId);
       if (!user) {
         return {
           chat_id: userId,
@@ -31,7 +31,7 @@ const swapCommand: Command = {
         };
       }
 
-      const keypair = getKeypairByUserId(user.id);
+      const keypair = await getKeypairByUserId(user.id);
       if (!keypair) {
         return {
           chat_id: userId,
@@ -55,7 +55,7 @@ const swapCommand: Command = {
       }
 
       // Validate amount
-      const amountValidation = await validateAmount(keypair.public_key, fromTokenMetadata.address, amount);
+      const amountValidation = await validateAmount(keypair.publicKey, fromTokenMetadata.address, amount);
       if (!amountValidation.isValid) {
         return {
           chat_id: userId,
@@ -73,7 +73,7 @@ const swapCommand: Command = {
         fromTokenMetadata.address,
         toTokenMetadata.address,
         parsedAmount.toString(),
-        keypair.public_key
+        keypair.publicKey
       );
 
       if (!orderResponse.transaction) {
@@ -88,7 +88,7 @@ const swapCommand: Command = {
       const decodedTx = transactionDecoder.decode(transactionBytes);
 
       // Sign the transaction
-      const userKeypair = Keypair.fromSecretKey(bs58.decode(keypair.private_key));
+      const userKeypair = Keypair.fromSecretKey(bs58.decode(keypair.privateKey));
       const solanaKeypair = await createKeyPairFromBytes(userKeypair.secretKey);
       const signedTransaction = await signTransaction(
         [solanaKeypair],

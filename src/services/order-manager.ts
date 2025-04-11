@@ -1,36 +1,25 @@
-import { getAllActiveOrders, deactivateOrder, createOrder, getUserOrders, getAllUserOrders, getUserByTelegramId } from '../db';
+import { getAllActiveOrders, deactivateOrder, createOrder, getUserOrders, getAllUserOrders, getUserByTelegramId, Order, getKeypairByUserId } from '../db/index';
 import { JupiterService } from './jup';
 import { getTokenMetadata } from '../solana/fetcher/getTokenMetadata';
-import { validateAmount } from '../solana/validateAmount';
 import { signTransaction, getBase64EncodedWireTransaction } from '@solana/kit';
 import { createKeyPairFromBytes } from '@solana/keys';
 import bs58 from 'bs58';
 import { Keypair } from '@solana/web3.js';
 import BigNumber from 'bignumber.js';
 import { base64Encoder, transactionDecoder } from '../solana/constants';
-import { getKeypairByUserId } from '../db';
 import { priceFeedService } from './price-feed';
 import { PriceUpdate } from './price-feed';
 import { config } from '../config';
-
-interface Order {
-  id: number;
-  user_id: number;
-  input_mint: string;
-  input_symbol: string;
-  output_mint: string;
-  price: number;
-  amount: number;
-  is_active: boolean;
-  created_at: string;
-}
 
 class OrderManager {
   private static instance: OrderManager;
   private activeOrders: Map<string, Order[]> = new Map();
 
   private constructor() {
-    this.initialize();
+    // Initialize asynchronously
+    this.initialize().catch(error => {
+      console.error('Failed to initialize order manager:', error);
+    });
   }
 
   public static getInstance(): OrderManager {
@@ -40,22 +29,30 @@ class OrderManager {
     return OrderManager.instance;
   }
 
-  public initialize() {
+  private async initialize() {
     try {
       console.log('Initializing order manager...');
-      const orders = getAllActiveOrders();
+      const orders = await getAllActiveOrders();
+      
+      if (!Array.isArray(orders)) {
+        console.error('Expected array of orders but got:', typeof orders);
+        return;
+      }
+
       console.log(`Loaded ${orders.length} active orders`);
       
       // Group orders by input token
       orders.forEach(order => {
-        if (!this.activeOrders.has(order.input_mint)) {
-          this.activeOrders.set(order.input_mint, []);
+        if (!this.activeOrders.has(order.inputMint)) {
+          this.activeOrders.set(order.inputMint, []);
         }
-        this.activeOrders.get(order.input_mint)?.push(order);
+        this.activeOrders.get(order.inputMint)?.push(order);
         
         // Subscribe to price updates for this symbol
-        this.subscribeToSymbol(order.input_symbol);
+        this.subscribeToSymbol(order.inputSymbol);
       });
+
+      console.log('Order manager initialized successfully');
     } catch (error) {
       console.error('Failed to initialize order manager:', error);
       throw error;
@@ -68,10 +65,10 @@ class OrderManager {
       console.log(`OrderManager: Received price update for ${symbol}: ${update.price}`);
       // Find all orders with this symbol
       const orders = Array.from(this.activeOrders.values()).flat().filter(
-        order => order.input_symbol === symbol
+        order => order.inputSymbol === symbol
       );
       orders.forEach(async (order) => {
-        await this.handlePriceUpdate(order.input_mint, update.price);
+        await this.handlePriceUpdate(order.inputMint, update.price);
       });
     };
     priceFeedService.subscribe(symbol, callback);
@@ -86,13 +83,11 @@ class OrderManager {
     }
 
     console.log(`OrderManager: Found ${orders.length} orders for ${inputMint}`);
-    Promise.all(orders.map(async (order) => {
-      // Skip if order was already processed
-
+    await Promise.all(orders.map(async (order) => {
       if (this.shouldTriggerOrder(order, currentPrice)) {
-        deactivateOrder(order.id);
-        console.log(`OrderManager: Deactivating order ${order}`, order);
-        const symbolOrders = this.activeOrders.get(order.input_mint);
+        await deactivateOrder(order.id);
+        console.log(`OrderManager: Deactivating order ${order.id}`, order);
+        const symbolOrders = this.activeOrders.get(order.inputMint);
         if (symbolOrders) {
           const index = symbolOrders.findIndex(o => o.id === order.id);
           if (index !== -1) {
@@ -103,7 +98,7 @@ class OrderManager {
         console.log(`OrderManager: Triggering order ${order.id} for ${inputMint} at price ${currentPrice}`);
         const signature = await this.executeOrder(order);
         if (signature) {
-            this.triggerAlert(order, currentPrice, signature);
+          await this.triggerAlert(order, currentPrice, signature);
         }
       }
     }));
@@ -111,29 +106,30 @@ class OrderManager {
 
   private shouldTriggerOrder(order: Order, currentPrice: number): boolean {
     console.log(`OrderManager: Checking if order ${order.id} should trigger at price ${currentPrice}`);
-    return order.is_active && currentPrice <= order.price;
+    if (!order.isActive) return false
+    return currentPrice <= order.price;
   }
 
   private async executeOrder(order: Order): Promise<string | undefined> {
     try {
-      console.log(`Processing order ${order.id} for user ${order.user_id}`);
+      console.log(`Processing order ${order.id} for user ${order.userId}`);
           
     // Get internal user ID from Telegram user ID
-      const user = getUserByTelegramId(order.user_id);
+      const user = await getUserByTelegramId(order.userId);
       if (!user) {
-        throw new Error(`No user found for Telegram ID ${order.user_id}`);
+        throw new Error(`No user found for Telegram ID ${order.userId}`);
       }
       // Get user's keypair
-      const keypair = getKeypairByUserId(user.id);
+      const keypair = await getKeypairByUserId(user.id);
       if (!keypair) {
-        console.error(`No keypair found for user ${order.user_id}`);
+        console.error(`No keypair found for user ${order.userId}`);
         return;
       }
 
       // Get token metadata for output token
-      const outputTokenMetadata = await getTokenMetadata(order.output_mint);
+      const outputTokenMetadata = await getTokenMetadata(order.outputMint);
       if (!outputTokenMetadata) {
-        console.error(`No metadata found for token ${order.output_mint}`);
+        console.error(`No metadata found for token ${order.outputMint}`);
         return;
       }
 
@@ -144,10 +140,10 @@ class OrderManager {
 
       // Get Ultra order
       const orderResponse = await JupiterService.getUltraOrder(
-        order.input_mint,
-        order.output_mint,
+        order.inputMint,
+        order.outputMint,
         parsedAmount.toString(),
-        keypair.public_key
+        keypair.publicKey
       );
 
       if (!orderResponse.transaction) {
@@ -160,7 +156,7 @@ class OrderManager {
       const decodedTx = transactionDecoder.decode(transactionBytes);
 
       // Sign the transaction
-      const userKeypair = Keypair.fromSecretKey(bs58.decode(keypair.private_key));
+      const userKeypair = Keypair.fromSecretKey(bs58.decode(keypair.privateKey));
       const solanaKeypair = await createKeyPairFromBytes(userKeypair.secretKey);
       const signedTransaction = await signTransaction(
         [solanaKeypair],
@@ -185,7 +181,7 @@ class OrderManager {
   private async triggerAlert(order: Order, currentPrice: number, signature: string) {
     try {
         // Send alert to user via Telegram
-        const message = `🔔 Order Triggered!\n\n${order.input_symbol} is now $${currentPrice.toFixed(2)}\n\n $${order.price}\n\nSignature: ${signature}\n\nhttps://solscan.io/tx/${signature}`;
+        const message = `🔔 Order Triggered!\n\n${order.inputSymbol} is now $${currentPrice.toFixed(2)}\n\n $${order.price}\n\nSignature: ${signature}\n\nhttps://solscan.io/tx/${signature}`;
         
         await fetch(`https://api.telegram.org/bot${config.BOT_TELEGRAM_KEY}/sendMessage`, {
           method: 'POST',
@@ -193,7 +189,7 @@ class OrderManager {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            chat_id: order.user_id,
+            chat_id: order.userId,
             text: message
           })
         });
@@ -211,10 +207,10 @@ class OrderManager {
     }
     
     // Create order in database with both mint and symbol
-    const order = createOrder(
-      userId, // Use internal user ID instead of Telegram user ID
+    const order = await createOrder(
+      userId,
       inputMint, 
-      inputTokenMetadata.symbol, // Store the symbol
+      inputTokenMetadata.symbol,
       outputMint, 
       price, 
       amount
@@ -236,16 +232,14 @@ class OrderManager {
     // Find the order in active orders
     for (const [symbol, orders] of this.activeOrders.entries()) {
       const order = orders.find(o => o.id === orderId);
-      console.log(`OrderManager: Removing order ${orderId} from active orders`, order);
       if (order) {
         console.log(`OrderManager: Removing order ${order.id} from active orders`);
         // Deactivate in database
-        deactivateOrder(orderId);
+        await deactivateOrder(orderId);
         
         // Remove from active orders
         const index = orders.indexOf(order);
         this.activeOrders.get(symbol)?.splice(index, 1);
-
         break;
       }
     }
@@ -256,10 +250,10 @@ class OrderManager {
   }
 
   public async removeAllUserOrders(userId: number): Promise<void> {
-    const orders = getAllUserOrders(userId);
+    const orders = await getAllUserOrders(userId);
     console.log(`OrderManager: Removing ${orders.length} orders for user ${userId}`);
     for (const order of orders) {
-      this.removeOrder(order.id);
+      await this.removeOrder(order.id);
     }
   }
 }

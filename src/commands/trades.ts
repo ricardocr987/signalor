@@ -1,7 +1,6 @@
 import { VybeService } from '../services/vybe';
 import { Command } from '../index';
-import { getUserByTelegramId } from '../db';
-import { getKeypairByUserId } from '../db';
+import { getUserByTelegramId, getKeypairByUserId } from '../db/index';
 
 const command: Command = {
   name: 'trades',
@@ -9,7 +8,7 @@ const command: Command = {
   execute: async (userId: number, args?: string[]) => {
     try {
       // Get user and their keypair
-      const user = getUserByTelegramId(userId);
+      const user = await getUserByTelegramId(userId);
       if (!user) {
         return {
           chat_id: userId,
@@ -17,7 +16,7 @@ const command: Command = {
         };
       }
 
-      const keypair = getKeypairByUserId(user.id);
+      const keypair = await getKeypairByUserId(user.id);
       if (!keypair) {
         return {
           chat_id: userId,
@@ -33,7 +32,7 @@ const command: Command = {
         timeEnd,
         limit: 5, // Get last 5 trades by default
         sortByDesc: 'blockTime', // Sort by most recent first
-        feePayer: args?.[0] || keypair.public_key // If address provided, filter by feePayer
+        feePayer: args?.[0] || keypair.publicKey // If address provided, filter by feePayer
       });
 
       if (response.data.length === 0) {

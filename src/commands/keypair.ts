@@ -1,5 +1,5 @@
 import { Command } from '../';
-import { getUserByTelegramId, createUser, createKeypair, getKeypairByUserId } from '../db';
+import { getUserByTelegramId, createUser, createKeypair, getKeypairByUserId } from '../db/index';
 import bs58 from 'bs58';
 import { Keypair } from '@solana/web3.js';
 
@@ -9,13 +9,13 @@ const keypairCommand: Command = {
   execute: async (userId: number, args?: string[]) => {
     try {
       // Get or create user
-      let user = getUserByTelegramId(userId);
+      let user = await getUserByTelegramId(userId);
       if (!user) {
-        user = createUser(userId);
+        user = await createUser(userId);
       }
 
       // Check if user already has a keypair
-      const existingKeypair = getKeypairByUserId(user.id);
+      const existingKeypair = await getKeypairByUserId(user.id);
 
       // If "show" argument is provided, display existing keypair
       if (args && args[0] === 'show') {
@@ -28,7 +28,7 @@ const keypairCommand: Command = {
         console.log(`Keypair command: Showing keypair for user ${userId}`);
         return {
           chat_id: userId,
-          text: `🔑 Your Solana Public Key:\n\`${existingKeypair.public_key}\``
+          text: `🔑 Your Solana Public Key:\n\`${existingKeypair.publicKey}\``
         };
       }
 
@@ -46,7 +46,7 @@ const keypairCommand: Command = {
       const privateKey = bs58.encode(keypair.secretKey);
 
       // Store keypair in database
-      createKeypair(user.id, publicKey, privateKey);
+      await createKeypair(user.id, publicKey, privateKey);
 
       return {
         chat_id: userId,

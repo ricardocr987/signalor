@@ -1,5 +1,5 @@
 import { Command } from '../';
-import { getUserByTelegramId, getKeypairByUserId } from '../db';
+import { getUserByTelegramId, getKeypairByUserId } from '../db/index';
 import { VybeService } from '../services/vybe';
 
 const balanceCommand: Command = {
@@ -8,7 +8,7 @@ const balanceCommand: Command = {
   execute: async (userId: number, args?: string[]) => {
     try {
       // Get user and their keypair
-      const user = getUserByTelegramId(userId);
+      const user = await getUserByTelegramId(userId);
       if (!user) {
         return {
           chat_id: userId,
@@ -16,7 +16,7 @@ const balanceCommand: Command = {
         };
       }
 
-      const keypair = getKeypairByUserId(user.id);
+      const keypair = await getKeypairByUserId(user.id);
       if (!keypair) {
         return {
           chat_id: userId,
@@ -25,7 +25,7 @@ const balanceCommand: Command = {
       }
 
       // Get token balances from Vybe
-      const balances = await VybeService.getTokenBalances(keypair.public_key, {
+      const balances = await VybeService.getTokenBalances(keypair.publicKey, {
         onlyVerified: true,
         minAssetValue: "1", // Only show balances worth at least $1
         sortByDesc: "valueUsd" // Sort by USD value descending
