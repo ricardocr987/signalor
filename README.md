@@ -35,6 +35,22 @@ The project is built using:
 - **Vybe API** for real-time token data and market information
 - **Telegram Bot API** for bot functionality
 - **Railway** for deployment and hosting
+- **PostgreSQL** for cloud-based database storage
+- **Drizzle ORM** for type-safe database operations
+
+### Database Setup on Railway
+
+1. Create a new PostgreSQL database on Railway
+2. Get your database connection string from Railway's dashboard
+3. Add the following to your `.env.local` file:
+```env
+DATABASE_URL=your_railway_postgres_connection_string
+```
+
+4. Run the database migrations:
+```bash
+bun run db:migrate
+```
 
 ### Key Components
 
@@ -42,6 +58,7 @@ The project is built using:
 - `src/config.ts` - Manages environment variables and configuration
 - `src/services/vybe.ts` - Vybe API integration for token data
 - `src/services/alert-manager.ts` - Manages user alerts and notifications
+- `src/db/` - Database schema and operations using Drizzle ORM
 
 ## 🛠️ Setup Guide
 
@@ -127,11 +144,13 @@ Replace:
 - **Environment Variables**: Secure storage of sensitive data
 - **User-specific Keypairs**: Individual keypair management for each user
 
+> ⚠️ **Security Note**: This bot stores user private keys in the database for automated trading functionality. While we implement security measures, please be aware that:
+> - Private keys are stored in the database and could potentially be accessed if the database is compromised
+> - Use the bot at your own risk and only with amounts you're comfortable with
+
 ## 🧪 Testing the Bot
 
 You can test the bot by searching for [@SignalorBot](https://t.me/SignalorBot) on Telegram. Try out the commands and explore the features!
-
-> ⚠️ **Note**: Use the bot at your own risk.
 
 ## 🤝 Contributing
 
