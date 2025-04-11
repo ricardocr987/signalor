@@ -4,17 +4,22 @@ import { tokens } from '../db/schema';
 import { eq } from 'drizzle-orm';
 
 interface VybeToken {
-  mintAddress: string;
-  name: string;
   symbol: string;
-  decimals: number;
+  name: string;
+  mintAddress: string;
+  price: number;
+  price1d: number;
+  price7d: number;
+  decimal: number;
+  logoUrl: string | null;
+  category: string | null;
+  subcategory: string | null;
+  verified: boolean;
+  updateTime: number;
   currentSupply: string;
   marketCap: number;
-  price: number;
-  volume24h: number;
-  priceChange24h: number;
-  priceChange24hPercent: number;
-  verified: boolean;
+  tokenAmountVolume24h: number;
+  usdValueVolume24h: number;
 }
 
 interface TopHolder {
@@ -113,6 +118,8 @@ export class VybeService {
       const tokens_data = await response.json();
       const vybeTokens = tokens_data.data as VybeToken[];
 
+      console.log(`Found ${vybeTokens.length} tokens`);
+
       // Clear existing tokens
       await db.delete(tokens);
 
@@ -120,17 +127,22 @@ export class VybeService {
       const batchSize = 100;
       for (let i = 0; i < vybeTokens.length; i += batchSize) {
         const batch = vybeTokens.slice(i, i + batchSize).map(token => ({
-          mintAddress: token.mintAddress,
-          name: token.name,
           symbol: token.symbol,
-          decimals: token.decimals,
+          name: token.name,
+          mintAddress: token.mintAddress,
+          price: token.price,
+          price1d: token.price1d,
+          price7d: token.price7d,
+          decimal: token.decimal,
+          logoUrl: token.logoUrl,
+          category: token.category,
+          subcategory: token.subcategory,
+          verified: token.verified,
+          updateTime: token.updateTime,
           currentSupply: token.currentSupply,
           marketCap: token.marketCap,
-          price: token.price,
-          volume24h: token.volume24h,
-          priceChange24h: token.priceChange24h,
-          priceChange24hPercent: token.priceChange24hPercent,
-          verified: token.verified
+          tokenAmountVolume24h: token.tokenAmountVolume24h,
+          usdValueVolume24h: token.usdValueVolume24h
         }));
 
         await db.insert(tokens).values(batch);

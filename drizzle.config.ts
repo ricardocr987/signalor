@@ -9,4 +9,5 @@ export default {
   },
   verbose: true,
   strict: true,
+  breakpoints: true
 } satisfies Config; 

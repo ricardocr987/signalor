@@ -38,17 +38,22 @@ export const orders = pgTable('orders', {
 
 export const tokens = pgTable('tokens', {
   id: serial('id').primaryKey(),
-  mintAddress: text('mint_address').notNull().unique(),
-  name: text('name').notNull(),
   symbol: text('symbol').notNull(),
-  decimals: integer('decimals').notNull(),
-  currentSupply: text('current_supply'),
-  marketCap: real('market_cap'),
-  price: real('price'),
-  volume24h: real('volume_24h'),
-  priceChange24h: real('price_change_24h'),
-  priceChange24hPercent: real('price_change_24h_percent'),
+  name: text('name').notNull(),
+  mintAddress: text('mint_address').notNull().unique(),
+  price: real('price').default(0),
+  price1d: real('price_1d').default(0),
+  price7d: real('price_7d').default(0),
+  decimal: integer('decimal').notNull(),
+  logoUrl: text('logo_url'),
+  category: text('category'),
+  subcategory: text('subcategory'),
   verified: boolean('verified').default(false),
+  updateTime: integer('update_time'),
+  currentSupply: text('current_supply'),
+  marketCap: real('market_cap').default(0),
+  tokenAmountVolume24h: real('token_amount_volume_24h').default(0),
+  usdValueVolume24h: real('usd_value_volume_24h').default(0),
   createdAt: timestamp('created_at').defaultNow()
 });
 
