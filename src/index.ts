@@ -47,6 +47,7 @@ const app = new Elysia()
       if (messageText.startsWith('/')) {
         const [commandName, ...args] = messageText.split(' ');
         const command = commandName.replace('/', '');
+        console.log(commandName, 'called with args', args);
         
         if (commands && commands[command]) {
           replyPayload = await commands[command].execute(userId, args);
