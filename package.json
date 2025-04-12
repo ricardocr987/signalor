@@ -5,7 +5,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "bun run --watch src/index.ts",
     "generate": "drizzle-kit generate:pg",
-    "migrate": "bun run src/db/migrate.ts"
+    "migrate": "bun run src/db/migrate.ts",
+    "db:generate": "bun run src/db/generate.ts"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.31.0",

@@ -213,7 +213,6 @@ export const getAllActiveOrders = async () => {
 // Token metadata operations
 export const getTokenMetadata = async (identifier: string): Promise<schema.Token | null> => {
   try {
-    console.log(identifier);
     // If identifier is less than 5 characters, treat it as a symbol
     if (identifier.length < 5) {
       const tokens = await db.select()
@@ -233,18 +232,16 @@ export const getTokenMetadata = async (identifier: string): Promise<schema.Token
       mintAddress: jupToken.address,
       symbol: jupToken.symbol,
       name: jupToken.name,
-      price: 0,
-      price1d: 0,
-      price7d: 0,
-      decimal: jupToken.decimals,
+      decimals: jupToken.decimals,
       logoUrl: jupToken.logoURI,
-      category: null,
-      subcategory: null,
-      verified: true,
-      currentSupply: '0',
-      marketCap: 0,
-      tokenAmountVolume24h: jupToken.daily_volume || 0,
-      usdValueVolume24h: 0,
+      dailyVolume: jupToken.daily_volume,
+      extensions: jupToken.extensions,
+      freezeAuthority: jupToken.freeze_authority,
+      mintAuthority: jupToken.mint_authority,
+      mintedAt: jupToken.minted_at ? new Date(jupToken.minted_at) : null,
+      permanentDelegate: jupToken.permanent_delegate,
+      tags: jupToken.tags,
+      updateTime: Date.now(),
       createdAt: new Date()
     };
   } catch (error) {

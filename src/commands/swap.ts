@@ -54,7 +54,7 @@ const swapCommand: Command = {
       }
 
       const parsedAmount = new BigNumber(amount).multipliedBy(
-        10 ** fromTokenMetadata.decimal
+        10 ** fromTokenMetadata.decimals
       );
 
       // Validate amount

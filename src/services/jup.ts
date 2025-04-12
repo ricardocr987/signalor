@@ -286,29 +286,38 @@ export class JupiterService {
       const jupTokens = await response.json() as JupiterToken[];
       console.log(`Found ${jupTokens.length} tokens`);
 
+      // Sort tokens by daily_volume in descending order and take top 1000
+      const sortedTokens = jupTokens
+        .sort((a, b) => (b.daily_volume || 0) - (a.daily_volume || 0))
+        .slice(0, 1000);
+
+      console.log(`Storing top 1000 tokens by daily volume`);
+
       // Clear existing tokens
       await db.delete(tokens);
 
       // Insert new tokens in batches
-      const batchSize = 1000; // Increased from 100 to 1000 for better performance with large datasets
-
-      for (let i = 0; i < jupTokens.length; i += batchSize) {        
-        const batch = jupTokens.slice(i, i + batchSize).map(token => ({
+      const batchSize = 100;
+      const totalBatches = Math.ceil(sortedTokens.length / batchSize);
+      
+      for (let i = 0; i < sortedTokens.length; i += batchSize) {
+        const currentBatch = Math.floor(i / batchSize) + 1;
+        console.log(`Processing batch ${currentBatch}/${totalBatches} (${Math.round((currentBatch/totalBatches)*100)}%)`);
+        
+        const batch = sortedTokens.slice(i, i + batchSize).map(token => ({
+          mintAddress: token.address,
           symbol: token.symbol,
           name: token.name,
-          mintAddress: token.address,
-          price: 0, // Jupiter doesn't provide price data
-          price1d: 0,
-          price7d: 0,
-          decimal: token.decimals,
+          decimals: token.decimals,
           logoUrl: token.logoURI,
-          category: null, // Jupiter doesn't provide category
-          subcategory: null, // Jupiter doesn't provide subcategory
-          verified: true, // Jupiter tokens are verified by default
-          currentSupply: '0', // Jupiter doesn't provide supply data
-          marketCap: 0, // Jupiter doesn't provide market cap
-          tokenAmountVolume24h: token.daily_volume || 0,
-          usdValueVolume24h: 0 // Jupiter doesn't provide USD volume
+          dailyVolume: token.daily_volume,
+          extensions: token.extensions,
+          freezeAuthority: token.freeze_authority,
+          mintAuthority: token.mint_authority,
+          mintedAt: token.minted_at ? new Date(token.minted_at) : null,
+          permanentDelegate: token.permanent_delegate,
+          tags: token.tags,
+          updateTime: Date.now()
         }));
 
         await db.insert(tokens).values(batch);

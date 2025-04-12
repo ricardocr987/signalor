@@ -40,19 +40,17 @@ export const tokens = pgTable('tokens', {
   mintAddress: text('mint_address').primaryKey(),
   symbol: text('symbol').notNull(),
   name: text('name').notNull(),
-  price: real('price').default(0),
-  price1d: real('price_1d').default(0),
-  price7d: real('price_7d').default(0),
-  decimal: integer('decimal').notNull(),
+  decimals: integer('decimals').notNull(),
   logoUrl: text('logo_url'),
-  category: text('category'),
-  subcategory: text('subcategory'),
-  verified: boolean('verified').default(false),
-  currentSupply: text('current_supply'),
-  marketCap: real('market_cap').default(0),
-  tokenAmountVolume24h: real('token_amount_volume_24h').default(0),
-  usdValueVolume24h: real('usd_value_volume_24h').default(0),
-  createdAt: timestamp('created_at').defaultNow()
+  dailyVolume: real('daily_volume'),
+  extensions: jsonb('extensions'),
+  freezeAuthority: text('freeze_authority'),
+  mintAuthority: text('mint_authority'),
+  mintedAt: timestamp('minted_at'),
+  permanentDelegate: text('permanent_delegate'),
+  tags: jsonb('tags'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updateTime: bigint('update_time', { mode: 'number' })
 });
 
 // Types

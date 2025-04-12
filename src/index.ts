@@ -23,9 +23,6 @@ const app = new Elysia()
     try {
       // Initialize price feed service
       await priceFeedService.initialize();
-      
-      // Fetch and store token data from Vybe
-      await JupiterService.fetchAndStoreTokens();
     } catch (error) {
       console.error('Failed to initialize services:', error);
     }
