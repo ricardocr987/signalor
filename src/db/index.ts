@@ -219,7 +219,7 @@ export const getTokenMetadata = async (identifier: string): Promise<schema.Token
         .from(schema.tokens)
         .where(eq(schema.tokens.symbol, identifier.toUpperCase()))
         .limit(1);
-      console.log(tokens);
+        
       return tokens[0] || null;
     }
 

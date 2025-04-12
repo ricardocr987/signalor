@@ -134,7 +134,7 @@ class OrderManager {
 
       // Calculate total input amount
       const parsedAmount = new BigNumber(order.amount).multipliedBy(
-        10 ** outputTokenMetadata.decimal
+        10 ** outputTokenMetadata.decimals
       );
 
       // Get Ultra order
