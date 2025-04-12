@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, text, timestamp, boolean, real, jsonb } from 'drizzle-orm/pg-core';
+import { pgTable, serial, integer, text, timestamp, boolean, real, jsonb, bigint } from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
   id: serial('id').primaryKey(),
@@ -37,10 +37,9 @@ export const orders = pgTable('orders', {
 });
 
 export const tokens = pgTable('tokens', {
-  id: serial('id').primaryKey(),
+  mintAddress: text('mint_address').primaryKey(),
   symbol: text('symbol').notNull(),
   name: text('name').notNull(),
-  mintAddress: text('mint_address').notNull().unique(),
   price: real('price').default(0),
   price1d: real('price_1d').default(0),
   price7d: real('price_7d').default(0),
@@ -49,7 +48,6 @@ export const tokens = pgTable('tokens', {
   category: text('category'),
   subcategory: text('subcategory'),
   verified: boolean('verified').default(false),
-  updateTime: integer('update_time'),
   currentSupply: text('current_supply'),
   marketCap: real('market_cap').default(0),
   tokenAmountVolume24h: real('token_amount_volume_24h').default(0),

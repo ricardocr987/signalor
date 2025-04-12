@@ -2,10 +2,10 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import { sql, eq, and } from 'drizzle-orm';
 import postgres from 'postgres';
 import * as schema from './schema';
+import { JupiterService } from '../services/jup';
 
 // Get the database URL from environment variable
 const connectionString = process.env.DATABASE_URL;
-
 if (!connectionString) {
   throw new Error('DATABASE_URL environment variable is not set');
 }
@@ -213,21 +213,40 @@ export const getAllActiveOrders = async () => {
 // Token metadata operations
 export const getTokenMetadata = async (identifier: string): Promise<schema.Token | null> => {
   try {
+    console.log(identifier);
     // If identifier is less than 5 characters, treat it as a symbol
     if (identifier.length < 5) {
       const tokens = await db.select()
         .from(schema.tokens)
         .where(eq(schema.tokens.symbol, identifier.toUpperCase()))
-        .orderBy(sql`${schema.tokens.marketCap} DESC NULLS LAST`)
         .limit(1);
+      console.log(tokens);
       return tokens[0] || null;
     }
 
-    // Otherwise treat it as a mint address
-    const tokens = await db.select()
-      .from(schema.tokens)
-      .where(eq(schema.tokens.mintAddress, identifier));
-    return tokens[0] || null;
+    // Otherwise treat it as a mint address and fetch from Jupiter
+    const jupToken = await JupiterService.getTokenMetadata(identifier);
+    if (!jupToken) return null;
+
+    // Convert Jupiter token to our schema
+    return {
+      mintAddress: jupToken.address,
+      symbol: jupToken.symbol,
+      name: jupToken.name,
+      price: 0,
+      price1d: 0,
+      price7d: 0,
+      decimal: jupToken.decimals,
+      logoUrl: jupToken.logoURI,
+      category: null,
+      subcategory: null,
+      verified: true,
+      currentSupply: '0',
+      marketCap: 0,
+      tokenAmountVolume24h: jupToken.daily_volume || 0,
+      usdValueVolume24h: 0,
+      createdAt: new Date()
+    };
   } catch (error) {
     console.error('Error getting token metadata:', error);
     throw error;

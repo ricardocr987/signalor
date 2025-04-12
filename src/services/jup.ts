@@ -1,5 +1,7 @@
 import ky from 'ky';
 import { config } from '../config';
+import { db } from '../db/index';
+import { tokens } from '../db/schema';
 
 interface RoutePlanStep {
   swapInfo: {
@@ -100,9 +102,26 @@ interface UltraExecuteResponse {
   swapEvents?: object[];
 }
 
+interface JupiterToken {
+  address: string;
+  created_at: string;
+  daily_volume: number | null;
+  decimals: number;
+  extensions: any;
+  freeze_authority: string | null;
+  logoURI: string | null;
+  mint_authority: string | null;
+  minted_at: string | null;
+  name: string;
+  permanent_delegate: string | null;
+  symbol: string;
+  tags: (string | null)[];
+}
+
 export class JupiterService {
   private static readonly BASE_URL = 'https://api.jup.ag/swap/v1';
   private static readonly ULTRA_BASE_URL = 'https://api.jup.ag/ultra/v1';
+  private static readonly TOKEN_BASE_URL = 'https://lite-api.jup.ag/tokens/v1';
 
   static async getQuote(
     inputMint: string,
@@ -246,6 +265,79 @@ export class JupiterService {
         .json<UltraExecuteResponse>();
     } catch (error) {
       console.error('Error executing Ultra order:', error);
+      throw error;
+    }
+  }
+
+  static async fetchAndStoreTokens(): Promise<void> {
+    try {
+      console.log('Fetching tokens from Jupiter...');
+      
+      const response = await fetch(`${this.TOKEN_BASE_URL}/all`, {
+        headers: {
+          'accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Jupiter API error: ${response.status} ${response.statusText}`);
+      }
+
+      const jupTokens = await response.json() as JupiterToken[];
+      console.log(`Found ${jupTokens.length} tokens`);
+
+      // Clear existing tokens
+      await db.delete(tokens);
+
+      // Insert new tokens in batches
+      const batchSize = 1000; // Increased from 100 to 1000 for better performance with large datasets
+
+      for (let i = 0; i < jupTokens.length; i += batchSize) {        
+        const batch = jupTokens.slice(i, i + batchSize).map(token => ({
+          symbol: token.symbol,
+          name: token.name,
+          mintAddress: token.address,
+          price: 0, // Jupiter doesn't provide price data
+          price1d: 0,
+          price7d: 0,
+          decimal: token.decimals,
+          logoUrl: token.logoURI,
+          category: null, // Jupiter doesn't provide category
+          subcategory: null, // Jupiter doesn't provide subcategory
+          verified: true, // Jupiter tokens are verified by default
+          updateTime: Date.now(),
+          currentSupply: '0', // Jupiter doesn't provide supply data
+          marketCap: 0, // Jupiter doesn't provide market cap
+          tokenAmountVolume24h: token.daily_volume || 0,
+          usdValueVolume24h: 0 // Jupiter doesn't provide USD volume
+        }));
+
+        await db.insert(tokens).values(batch);
+      }
+
+      console.log('Token data successfully stored in database');
+    } catch (error) {
+      console.error('Error fetching and storing tokens:', error);
+      throw error;
+    }
+  }
+
+  static async getTokenMetadata(mintAddress: string): Promise<JupiterToken | null> {
+    try {
+      const response = await fetch(`${this.TOKEN_BASE_URL}/all`, {
+        headers: {
+          'accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Jupiter API error: ${response.status} ${response.statusText}`);
+      }
+
+      const tokens = await response.json() as JupiterToken[];
+      return tokens.find(token => token.address === mintAddress) || null;
+    } catch (error) {
+      console.error('Error fetching token metadata:', error);
       throw error;
     }
   }

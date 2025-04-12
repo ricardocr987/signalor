@@ -3,7 +3,7 @@ import { config } from "./config";
 import * as fs from 'fs';
 import * as path from 'path';
 import { priceFeedService } from './services/price-feed';
-import { VybeService } from './services/vybe';
+import { JupiterService } from './services/jup';
 
 export interface CommandResponse {
   chat_id: number;
@@ -25,7 +25,7 @@ const app = new Elysia()
       await priceFeedService.initialize();
       
       // Fetch and store token data from Vybe
-      await VybeService.fetchAndStoreTokens();
+      await JupiterService.fetchAndStoreTokens();
     } catch (error) {
       console.error('Failed to initialize services:', error);
     }

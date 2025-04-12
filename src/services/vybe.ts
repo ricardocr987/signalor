@@ -100,61 +100,6 @@ interface OHLCVResponse {
 export class VybeService {
   private static readonly BASE_URL = 'https://api.vybenetwork.xyz';
 
-  static async fetchAndStoreTokens(): Promise<void> {
-    try {
-      console.log('Fetching tokens from Vybe...');
-      
-      const response = await fetch(`${this.BASE_URL}/tokens?sortByDesc=marketCap&limit=1000`, {
-        headers: {
-          'accept': 'application/json',
-          'X-API-KEY': config.VYBE_API_KEY || ''
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error(`Vybe API error: ${response.status} ${response.statusText}`);
-      }
-
-      const tokens_data = await response.json();
-      const vybeTokens = tokens_data.data as VybeToken[];
-
-      console.log(`Found ${vybeTokens.length} tokens`);
-
-      // Clear existing tokens
-      await db.delete(tokens);
-
-      // Insert new tokens in batches
-      const batchSize = 100;
-      for (let i = 0; i < vybeTokens.length; i += batchSize) {
-        const batch = vybeTokens.slice(i, i + batchSize).map(token => ({
-          symbol: token.symbol,
-          name: token.name,
-          mintAddress: token.mintAddress,
-          price: token.price,
-          price1d: token.price1d,
-          price7d: token.price7d,
-          decimal: token.decimal,
-          logoUrl: token.logoUrl,
-          category: token.category,
-          subcategory: token.subcategory,
-          verified: token.verified,
-          updateTime: token.updateTime,
-          currentSupply: token.currentSupply,
-          marketCap: token.marketCap,
-          tokenAmountVolume24h: token.tokenAmountVolume24h,
-          usdValueVolume24h: token.usdValueVolume24h
-        }));
-
-        await db.insert(tokens).values(batch);
-      }
-
-      console.log('Token data successfully stored in database');
-    } catch (error) {
-      console.error('Error fetching and storing tokens:', error);
-      throw error;
-    }
-  }
-
   static async getTokenByMintAddress(mintAddress: string): Promise<typeof tokens.$inferSelect | null> {
     try {
       const result = await db.select().from(tokens).where(eq(tokens.mintAddress, mintAddress)).limit(1);
