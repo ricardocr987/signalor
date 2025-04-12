@@ -2,6 +2,7 @@ import { Command, CommandResponse } from '../index';
 import { VybeService } from '../services/vybe';
 import { ChartJSNodeCanvas } from 'chartjs-node-canvas';
 import { TimeframeToSeconds, formatNumber } from '../utils';
+import { getTokenMetadata } from '../db/index';
 
 interface ChartOptions {
   token: string;
@@ -59,7 +60,15 @@ const chartCommand: Command = {
       const endTime = Math.floor(Date.now() / 1000);
       const startTime = endTime - TimeframeToSeconds[timeframe] * 100; // Get 100 candles
 
-      const ohlcvData = await VybeService.getTokenOHLCV(options.token, {
+      const tokenMetadata = await getTokenMetadata(options.token);
+      if (!tokenMetadata) {
+        return {
+          chat_id: userId,
+          text: `Token ${options.token} not found`
+        };
+      }
+
+      const ohlcvData = await VybeService.getTokenOHLCV(tokenMetadata.mintAddress, {
         resolution: timeframe,
         timeStart: startTime,
         timeEnd: endTime,

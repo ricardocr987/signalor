@@ -1,6 +1,6 @@
 import { Command } from '../';
+import { getTokenMetadata } from '../db/index';
 import { orderManager } from '../services/order-manager';
-import { getTokenMetadata } from '../solana/fetcher/getTokenMetadata';
 
 const orderCommand: Command = {
   name: 'order',
@@ -93,8 +93,8 @@ const orderCommand: Command = {
       // Create the order
       await orderManager.addOrder(
         userId,
-        inputTokenMetadata.address,
-        outputTokenMetadata.address,
+        inputTokenMetadata.mintAddress,
+        outputTokenMetadata.mintAddress,
         price,
         amount
       );

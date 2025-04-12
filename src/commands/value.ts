@@ -1,4 +1,5 @@
 import { Command } from '../';
+import { getTokenMetadata } from '../db/index';
 import { VybeService } from '../services/vybe';
 
 const valueCommand: Command = {
@@ -15,6 +16,14 @@ const valueCommand: Command = {
     const amount = parseFloat(args[0]);
     const token = args[1];
 
+    const tokenMetadata = await getTokenMetadata(token);
+    if (!tokenMetadata) {
+      return {
+        chat_id: userId,
+        text: `Token ${token} not found`
+      };
+    }
+
     if (isNaN(amount) || amount <= 0) {
       return {
         chat_id: userId,
@@ -27,7 +36,7 @@ const valueCommand: Command = {
       const timeStart = now - 2;
 
       // Get the latest price data
-      const ohlcvData = await VybeService.getTokenOHLCV(token, {
+      const ohlcvData = await VybeService.getTokenOHLCV(tokenMetadata.mintAddress, {
         resolution: '1m',
         timeStart,
         timeEnd: now,

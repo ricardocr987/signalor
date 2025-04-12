@@ -1,7 +1,6 @@
 import { Command } from '../';
-import { getUserByTelegramId, getKeypairByUserId } from '../db/index';
+import { getUserByTelegramId, getKeypairByUserId, getTokenMetadata } from '../db/index';
 import { JupiterService } from '../services/jup';
-import { getTokenMetadata } from '../solana/fetcher/getTokenMetadata';
 import { validateAmount } from '../solana/validateAmount';
 import { signTransaction, getBase64EncodedWireTransaction } from '@solana/kit';
 import { createKeyPairFromBytes } from '@solana/keys';
@@ -54,8 +53,12 @@ const swapCommand: Command = {
         };
       }
 
+      const parsedAmount = new BigNumber(amount).multipliedBy(
+        10 ** fromTokenMetadata.decimal
+      );
+
       // Validate amount
-      const amountValidation = await validateAmount(keypair.publicKey, fromTokenMetadata.address, amount);
+      const amountValidation = await validateAmount(keypair.publicKey, fromTokenMetadata.mintAddress, parsedAmount.toString());
       if (!amountValidation.isValid) {
         return {
           chat_id: userId,
@@ -63,15 +66,10 @@ const swapCommand: Command = {
         };
       }
 
-      // Calculate total input amount
-      const parsedAmount = new BigNumber(amount).multipliedBy(
-        10 ** fromTokenMetadata.decimals
-      );
-
       // Get Ultra order
       const orderResponse = await JupiterService.getUltraOrder(
-        fromTokenMetadata.address,
-        toTokenMetadata.address,
+        fromTokenMetadata.mintAddress,
+        toTokenMetadata.mintAddress,
         parsedAmount.toString(),
         keypair.publicKey
       );

@@ -1,6 +1,5 @@
-import { getAllActiveOrders, deactivateOrder, createOrder, getUserOrders, getAllUserOrders, getUserByTelegramId, Order, getKeypairByUserId } from '../db/index';
+import { getAllActiveOrders, deactivateOrder, createOrder, getUserOrders, getAllUserOrders, getUserByTelegramId, Order, getKeypairByUserId, getTokenMetadata } from '../db/index';
 import { JupiterService } from './jup';
-import { getTokenMetadata } from '../solana/fetcher/getTokenMetadata';
 import { signTransaction, getBase64EncodedWireTransaction } from '@solana/kit';
 import { createKeyPairFromBytes } from '@solana/keys';
 import bs58 from 'bs58';
@@ -135,7 +134,7 @@ class OrderManager {
 
       // Calculate total input amount
       const parsedAmount = new BigNumber(order.amount).multipliedBy(
-        10 ** outputTokenMetadata.decimals
+        10 ** outputTokenMetadata.decimal
       );
 
       // Get Ultra order

@@ -1,6 +1,8 @@
 import { getTokenMetadata } from './fetcher/getTokenMetadata';
 import { getTokenBalance } from './fetcher/getTokenBalance';
 import BigNumber from 'bignumber.js';
+import { rpc } from './rpc';
+import { address } from '@solana/kit';
 
 export type ValidateAmount = {
   isValid: boolean;
@@ -22,7 +24,12 @@ export async function validateAmount(
   }
 
   try {
-    const balance = await getTokenBalance(account, inputToken);
+    let balance: string | null = null;
+    if (inputToken === 'SOL') {
+      balance = (await rpc.getBalance(address(account)).send()).value.toString();
+    } else {
+      balance = await getTokenBalance(account, inputToken);
+    }
 
     if (!balance) {
       return {

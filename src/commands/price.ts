@@ -1,6 +1,6 @@
 import { Command } from '../';
 import { VybeService } from '../services/vybe';
-
+import { getTokenMetadata } from '../db/index';
 const priceCommand: Command = {
   name: 'price',
   description: 'Get the current price of a token',
@@ -13,13 +13,20 @@ const priceCommand: Command = {
     }
 
     const token = args[0];
+    const tokenMetadata = await getTokenMetadata(token);
+    if (!tokenMetadata) {
+      return {
+        chat_id: userId,
+        text: `Token ${token} not found`
+      };
+    }
     
     try {
       const now = Math.floor(Date.now() / 1000); // Current Unix timestamp in seconds
       const timeStart = now - 2;
 
       // Get the latest OHLCV data for the token with 1-minute resolution
-      const ohlcvData = await VybeService.getTokenOHLCV(token, {
+      const ohlcvData = await VybeService.getTokenOHLCV(tokenMetadata.mintAddress, {
         resolution: '1m',
         timeStart,
         timeEnd: now,

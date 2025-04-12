@@ -210,5 +210,39 @@ export const getAllActiveOrders = async () => {
   }
 };
 
+// Token metadata operations
+export const getTokenMetadata = async (identifier: string): Promise<schema.Token | null> => {
+  try {
+    // If identifier is less than 5 characters, treat it as a symbol
+    if (identifier.length < 5) {
+      const tokens = await db.select()
+        .from(schema.tokens)
+        .where(eq(schema.tokens.symbol, identifier.toUpperCase()))
+        .orderBy(sql`${schema.tokens.marketCap} DESC NULLS LAST`)
+        .limit(1);
+      return tokens[0] || null;
+    }
+
+    // Otherwise treat it as a mint address
+    const tokens = await db.select()
+      .from(schema.tokens)
+      .where(eq(schema.tokens.mintAddress, identifier));
+    return tokens[0] || null;
+  } catch (error) {
+    console.error('Error getting token metadata:', error);
+    throw error;
+  }
+};
+
+export const getTokenMetadatas = async (identifiers: string[]): Promise<schema.Token[]> => {
+  try {
+    const results = await Promise.all(identifiers.map(getTokenMetadata));
+    return results.filter((token): token is schema.Token => token !== null);
+  } catch (error) {
+    console.error('Error getting multiple token metadatas:', error);
+    throw error;
+  }
+};
+
 export { db };
 export type { User, NewUser, Keypair, NewKeypair, Alert, NewAlert, Order, NewOrder, Token, NewToken } from './schema'; 
