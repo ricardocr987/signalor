@@ -305,7 +305,6 @@ export class JupiterService {
           category: null, // Jupiter doesn't provide category
           subcategory: null, // Jupiter doesn't provide subcategory
           verified: true, // Jupiter tokens are verified by default
-          updateTime: Date.now(),
           currentSupply: '0', // Jupiter doesn't provide supply data
           marketCap: 0, // Jupiter doesn't provide market cap
           tokenAmountVolume24h: token.daily_volume || 0,

@@ -15,7 +15,6 @@ interface VybeToken {
   category: string | null;
   subcategory: string | null;
   verified: boolean;
-  updateTime: number;
   currentSupply: string;
   marketCap: number;
   tokenAmountVolume24h: number;
