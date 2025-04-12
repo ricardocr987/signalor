@@ -1,4 +1,4 @@
-import { getTokenMetadata } from './fetcher/getTokenMetadata';
+import { getTokenMetadata } from '../db/index';
 import { getTokenBalance } from './fetcher/getTokenBalance';
 import BigNumber from 'bignumber.js';
 import { rpc } from './rpc';

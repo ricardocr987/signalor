@@ -219,31 +219,16 @@ export const getTokenMetadata = async (identifier: string): Promise<schema.Token
         .from(schema.tokens)
         .where(eq(schema.tokens.symbol, identifier.toUpperCase()))
         .limit(1);
-        
+
       return tokens[0] || null;
     }
 
-    // Otherwise treat it as a mint address and fetch from Jupiter
-    const jupToken = await JupiterService.getTokenMetadata(identifier);
-    if (!jupToken) return null;
+    const tokens = await db.select()
+      .from(schema.tokens)
+      .where(eq(schema.tokens.mintAddress, identifier))
+      .limit(1);
 
-    // Convert Jupiter token to our schema
-    return {
-      mintAddress: jupToken.address,
-      symbol: jupToken.symbol,
-      name: jupToken.name,
-      decimals: jupToken.decimals,
-      logoUrl: jupToken.logoURI,
-      dailyVolume: jupToken.daily_volume,
-      extensions: jupToken.extensions,
-      freezeAuthority: jupToken.freeze_authority,
-      mintAuthority: jupToken.mint_authority,
-      mintedAt: jupToken.minted_at ? new Date(jupToken.minted_at) : null,
-      permanentDelegate: jupToken.permanent_delegate,
-      tags: jupToken.tags,
-      updateTime: Date.now(),
-      createdAt: new Date()
-    };
+    return tokens[0] || null;
   } catch (error) {
     console.error('Error getting token metadata:', error);
     throw error;

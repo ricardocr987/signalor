@@ -58,7 +58,7 @@ const swapCommand: Command = {
       );
 
       // Validate amount
-      const amountValidation = await validateAmount(keypair.publicKey, fromTokenMetadata.mintAddress, parsedAmount.toString());
+      const amountValidation = await validateAmount(keypair.publicKey, fromTokenMetadata.mintAddress, amount);
       if (!amountValidation.isValid) {
         return {
           chat_id: userId,
@@ -109,9 +109,11 @@ const swapCommand: Command = {
         };
       }
 
+      const outAmount = new BigNumber(orderResponse.outAmount).dividedBy(10 ** toTokenMetadata.decimals);
+
       return {
         chat_id: userId,
-        text: `✅ Swap executed successfully!\n\nFrom: ${amount} ${fromToken}\nTo: ${orderResponse.outAmount} ${toToken}\n\nTransaction: https://solscan.io/tx/${executeResponse.signature}`
+        text: `✅ Swap executed successfully!\n\nFrom: ${amount} ${fromToken}\nTo: ${outAmount.toString()} ${toToken}\n\nTransaction: https://solscan.io/tx/${executeResponse.signature}`
       };
     } catch (error) {
       console.error('Error executing swap:', error);
