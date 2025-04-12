@@ -1,6 +1,12 @@
 [phases.setup]
-  # uses bun 1.0.18
-  nixpkgsArchive = '9c69bc8cae2f3b38536a50801961e2e62da13595'
- 
+nixPkgs = ['bun']
+aptPkgs = ["unzip"]
+[phases.update]
+cmds = ['bun upgrade']
+dependsOn = ["setup"]
+[phases.build]
+cmds = ['bun build --compile --minify-whitespace --minify-syntax --sourcemap --target bun ./src/index.ts --outfile dist/api']
+
+
 [start]
-  cmd = "bun i && bun run dev"
+cmd = 'bun run dev'
