@@ -104,7 +104,7 @@ export class VybeService {
     try {
       console.log('Fetching tokens from Vybe...');
       
-      const response = await fetch(`${this.BASE_URL}/tokens?sortByAsc=marketCap&limit=1000`, {
+      const response = await fetch(`${this.BASE_URL}/tokens?sortByDesc=marketCap&limit=1000`, {
         headers: {
           'accept': 'application/json',
           'X-API-KEY': config.VYBE_API_KEY || ''
