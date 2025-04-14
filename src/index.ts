@@ -3,7 +3,6 @@ import { config } from "./config";
 import * as fs from 'fs';
 import * as path from 'path';
 import { priceFeedService } from './services/price-feed';
-import { JupiterService } from './services/jup';
 
 export interface CommandResponse {
   chat_id: number;

@@ -34,6 +34,11 @@ export const getUserByTelegramId = async (telegramId: number) => {
   }
 };
 
+export const getUserTelegramId = async (userId: number) => {
+  const user = await db.select().from(schema.users).where(eq(schema.users.id, userId));
+  return user[0].telegramId;
+};
+
 export const createUser = async (telegramId: number) => {
   try {
     const [user] = await db.insert(schema.users)

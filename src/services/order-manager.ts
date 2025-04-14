@@ -1,4 +1,4 @@
-import { getAllActiveOrders, deactivateOrder, createOrder, getUserOrders, getAllUserOrders, getUserByTelegramId, Order, getKeypairByUserId, getTokenMetadata } from '../db/index';
+import { getAllActiveOrders, deactivateOrder, createOrder, getUserOrders, getAllUserOrders, getUserByTelegramId, Order, getKeypairByUserId, getTokenMetadata, getUserTelegramId } from '../db/index';
 import { JupiterService } from './jup';
 import { signTransaction, getBase64EncodedWireTransaction } from '@solana/kit';
 import { createKeyPairFromBytes } from '@solana/keys';
@@ -9,6 +9,8 @@ import { base64Encoder, transactionDecoder } from '../solana/constants';
 import { priceFeedService } from './price-feed';
 import { PriceUpdate } from './price-feed';
 import { config } from '../config';
+import { rpc } from '../solana/rpc';
+import { confirmTransaction } from '../solana/confirm';
 
 class OrderManager {
   private static instance: OrderManager;
@@ -30,7 +32,6 @@ class OrderManager {
 
   private async initialize() {
     try {
-      console.log('Initializing order manager...');
       const orders = await getAllActiveOrders();
       
       if (!Array.isArray(orders)) {
@@ -48,7 +49,7 @@ class OrderManager {
         this.activeOrders.get(order.inputMint)?.push(order);
         
         // Subscribe to price updates for this symbol
-        this.subscribeToSymbol(order.inputSymbol);
+        this.subscribeToSymbol(order.inputSymbol, order.id);
       });
 
       console.log('Order manager initialized successfully');
@@ -58,7 +59,7 @@ class OrderManager {
     }
   }
 
-  private subscribeToSymbol(symbol: string) {
+  private subscribeToSymbol(symbol: string, orderId: number) {
     console.log(`OrderManager: Subscribing to ${symbol}`);
     const callback = (update: PriceUpdate) => {
       console.log(`OrderManager: Received price update for ${symbol}: ${update.price}`);
@@ -70,7 +71,7 @@ class OrderManager {
         await this.handlePriceUpdate(order.inputMint, update.price);
       });
     };
-    priceFeedService.subscribe(symbol, callback);
+    priceFeedService.subscribe(symbol, orderId, 'order', callback);
   }
 
   private async handlePriceUpdate(inputMint: string, currentPrice: number) {
@@ -84,8 +85,11 @@ class OrderManager {
     console.log(`OrderManager: Found ${orders.length} orders for ${inputMint}`);
     await Promise.all(orders.map(async (order) => {
       if (this.shouldTriggerOrder(order, currentPrice)) {
+        // Unsubscribe using the order ID and type
+        priceFeedService.unsubscribeById(order.id, 'order');
         await deactivateOrder(order.id);
         console.log(`OrderManager: Deactivating order ${order.id}`, order);
+        
         const symbolOrders = this.activeOrders.get(order.inputMint);
         if (symbolOrders) {
           const index = symbolOrders.findIndex(o => o.id === order.id);
@@ -111,15 +115,10 @@ class OrderManager {
 
   private async executeOrder(order: Order): Promise<string | undefined> {
     try {
-      console.log(`Processing order ${order.id} for user ${order.userId}`);
-          
-    // Get internal user ID from Telegram user ID
-      const user = await getUserByTelegramId(order.userId);
-      if (!user) {
-        throw new Error(`No user found for Telegram ID ${order.userId}`);
-      }
       // Get user's keypair
-      const keypair = await getKeypairByUserId(user.id);
+      const telegramId = await getUserTelegramId(order.userId);
+      console.log('telegramId', telegramId);
+      const keypair = await getKeypairByUserId(telegramId);
       if (!keypair) {
         console.error(`No keypair found for user ${order.userId}`);
         return;
@@ -162,16 +161,18 @@ class OrderManager {
         decodedTx
       );
 
+      console.log('signedTransaction', signedTransaction);
+
       // Get the base64 encoded wire transaction
       const wireTransaction = getBase64EncodedWireTransaction(signedTransaction);
-
+      console.log('wireTransaction', wireTransaction);
       // Execute the swap
-      const executeResponse = await JupiterService.executeUltraOrder(
+      /*const executeResponse = await JupiterService.executeUltraOrder(
         wireTransaction,
         orderResponse.requestId
-      );
+      );*/
 
-      return executeResponse.signature;
+      return await confirmTransaction(wireTransaction);
     } catch (error) {
       console.error(`Error executing order ${order.id}:`, error);
     }
@@ -180,15 +181,16 @@ class OrderManager {
   private async triggerAlert(order: Order, currentPrice: number, signature: string) {
     try {
         // Send alert to user via Telegram
-        const message = `🔔 Order Triggered!\n\n${order.inputSymbol} is now $${currentPrice.toFixed(2)}\n\n $${order.price}\n\nSignature: ${signature}\n\nhttps://solscan.io/tx/${signature}`;
-        
+        const message = `🔔 Order Triggered!\n\n${order.inputSymbol} is now $${currentPrice.toFixed(2)}\n\n $${currentPrice.toFixed(2)}\n\nSignature: ${signature}\n\nhttps://solscan.io/tx/${signature}`;
+        const telegramId = await getUserTelegramId(order.userId);
+
         await fetch(`https://api.telegram.org/bot${config.BOT_TELEGRAM_KEY}/sendMessage`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            chat_id: order.userId,
+            chat_id: telegramId,
             text: message
           })
         });
@@ -221,8 +223,8 @@ class OrderManager {
     }
     this.activeOrders.get(inputMint)?.push(order);
     
-    // Subscribe to price updates for this symbol
-    this.subscribeToSymbol(inputTokenMetadata.symbol);
+    // Subscribe to price updates for this symbol and store the callback ID
+    this.subscribeToSymbol(inputTokenMetadata.symbol, order.id);
         
     return order;
   }
@@ -235,6 +237,9 @@ class OrderManager {
         console.log(`OrderManager: Removing order ${order.id} from active orders`);
         // Deactivate in database
         await deactivateOrder(orderId);
+        
+        // Unsubscribe using the order ID and type
+        priceFeedService.unsubscribeById(orderId, 'order');
         
         // Remove from active orders
         const index = orders.indexOf(order);

@@ -9,10 +9,21 @@ export interface PriceUpdate {
 
 type PriceUpdateCallback = (update: PriceUpdate) => void;
 
+interface CallbackEntry {
+  id: number;
+  type: 'alert' | 'order';
+  callback: PriceUpdateCallback;
+}
+
+interface CallbackKey {
+  id: number;
+  type: 'alert' | 'order';
+}
+
 export class PriceFeedService {
   private static instance: PriceFeedService;
   private wsManager: WebSocketManager;
-  private callbacks: Map<string, Set<PriceUpdateCallback>> = new Map();
+  private callbacks: Map<string, Set<CallbackEntry>> = new Map();
   private priceFeeds: Set<string> = new Set();
 
   private constructor() {
@@ -54,16 +65,17 @@ export class PriceFeedService {
       price: parseFloat(update.price),
       timestamp: update.timestamp || Date.now()
     };
-
-    callbacks.forEach(callback => callback(priceUpdate));
+    console.log('symbol', symbol);
+    console.log('priceUpdate', priceUpdate);
+    console.log('callbacks', callbacks);
+    callbacks.forEach(entry => entry.callback(priceUpdate));
   }
 
-  public subscribe(symbol: string, callback: PriceUpdateCallback) {
+  public subscribe(symbol: string, id: number, type: 'alert' | 'order', callback: PriceUpdateCallback) {
     if (!this.callbacks.has(symbol)) {
       this.callbacks.set(symbol, new Set());
     }
-        
-    this.callbacks.get(symbol)?.add(callback);
+    this.callbacks.get(symbol)?.add({ id, type, callback });
 
     if (!this.priceFeeds.has(symbol)) {
       this.wsManager.subscribeToPriceFeed(
@@ -74,12 +86,31 @@ export class PriceFeedService {
     }
   }
 
+  public unsubscribeById(id: number, type: 'alert' | 'order') {
+    for (const [symbol, callbacks] of this.callbacks.entries()) {
+      for (const entry of callbacks) {
+        if (entry.id === id && entry.type === type) {
+          callbacks.delete(entry);
+          if (callbacks.size === 0) {
+            this.callbacks.delete(symbol);
+          }
+          break;
+        }
+      }
+    }
+  }
+
   public unsubscribe(symbol: string, callback: PriceUpdateCallback) {
     const callbacks = this.callbacks.get(symbol);
     if (callbacks) {
-      callbacks.delete(callback);
-      if (callbacks.size === 0) {
-        this.callbacks.delete(symbol);
+      for (const entry of callbacks) {
+        if (entry.callback === callback) {
+          callbacks.delete(entry);
+          if (callbacks.size === 0) {
+            this.callbacks.delete(symbol);
+          }
+          break;
+        }
       }
     }
   }

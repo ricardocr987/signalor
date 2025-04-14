@@ -32,11 +32,13 @@ export async function confirmTransaction(transaction: string): Promise<string> {
   const maxRetries = 3;
 
   while (retries < maxRetries) {
+    console.log('Sending transaction...');
     try {
       await sendAndConfirmTransaction(signedTransactionWithLifetime, {
         commitment: 'confirmed',
         skipPreflight: true,
       });
+      console.log('Transaction sent successfully');
 
       return getSignatureFromTransaction(signedTransactionWithLifetime);
     } catch (error) {

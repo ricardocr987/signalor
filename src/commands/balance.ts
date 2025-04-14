@@ -7,16 +7,7 @@ const balanceCommand: Command = {
   description: 'Check token balances for your wallet. Use /balance <token_symbol> to check specific token.',
   execute: async (userId: number, args?: string[]) => {
     try {
-      // Get user and their keypair
-      const user = await getUserByTelegramId(userId);
-      if (!user) {
-        return {
-          chat_id: userId,
-          text: "You need to generate a keypair first using /keypair command."
-        };
-      }
-
-      const keypair = await getKeypairByUserId(user.id);
+      const keypair = await getKeypairByUserId(userId);
       if (!keypair) {
         return {
           chat_id: userId,

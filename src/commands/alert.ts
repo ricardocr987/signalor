@@ -1,4 +1,5 @@
 import { Command } from '../';
+import { getTokenMetadata } from '../db';
 import { AlertManager } from '../services/alert-manager';
 
 const alertManager = AlertManager.getInstance();
@@ -67,7 +68,14 @@ const alertCommand: Command = {
       };
     }
 
-    const token = args[0].toUpperCase();
+    const token = args[0];
+    const tokenMetadata = await getTokenMetadata(token);
+    if (!tokenMetadata) {
+      return {
+        chat_id: userId,
+        text: `Sorry, ${token} is not available.`
+      };
+    }
     const price = parseFloat(args[1]);
     const condition = args[2].toLowerCase();
 
@@ -87,7 +95,7 @@ const alertCommand: Command = {
 
     try {
       // Check if the token is available in Pyth
-      const subscribed = alertManager.symbolSubscribed(token);
+      const subscribed = alertManager.symbolSubscribed(tokenMetadata.symbol);
       if (!subscribed) {
         return {
           chat_id: userId,
@@ -96,7 +104,7 @@ const alertCommand: Command = {
       }
 
       // Add the alert
-      await alertManager.addAlert(userId, token, price, condition as 'above' | 'below');
+      await alertManager.addAlert(userId, tokenMetadata.symbol, price, condition as 'above' | 'below');
       
       return {
         chat_id: userId,

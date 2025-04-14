@@ -8,14 +8,8 @@ const keypairCommand: Command = {
   description: 'Generate a new Solana keypair or show existing one',
   execute: async (userId: number, args?: string[]) => {
     try {
-      // Get or create user
-      let user = await getUserByTelegramId(userId);
-      if (!user) {
-        user = await createUser(userId);
-      }
-
       // Check if user already has a keypair
-      const existingKeypair = await getKeypairByUserId(user.id);
+      const existingKeypair = await getKeypairByUserId(userId);
 
       // If "show" argument is provided, display existing keypair
       if (args && args[0] === 'show') {
@@ -46,7 +40,7 @@ const keypairCommand: Command = {
       const privateKey = bs58.encode(keypair.secretKey);
 
       // Store keypair in database
-      await createKeypair(user.id, publicKey, privateKey);
+      await createKeypair(userId, publicKey, privateKey);
 
       return {
         chat_id: userId,
