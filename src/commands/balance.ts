@@ -63,7 +63,7 @@ const balanceCommand: Command = {
 
       return {
         chat_id: userId,
-        text: `🔍 Your Token Balances:\n\n${balanceList}\n\nTotal Assets: $${balances.data.reduce((sum, token) => sum + token.valueUsd, 0).toLocaleString()}`
+        text: `🔍 Your Token Balances:\n\n${balanceList}\n\nTotal Assets: $${balances.data.reduce((sum, token) => sum + token.valueUsd, 0).toFixed(2)}`
       };
     } catch (error) {
       console.error('Error checking balances:', error);
