@@ -1,8 +1,8 @@
-import { Command, CommandResponse } from '../index';
-import { VybeService } from '../services/vybe';
-import { TimeframeToSeconds, formatNumber } from '../utils';
+import { Command, CommandResponse } from '../';
 import { getTokenMetadata } from '../db/index';
-import { createCanvas } from 'canvas';
+import { VybeService } from '../services/vybe';
+import { TimeframeToSeconds } from '../utils';
+import sharp from 'sharp';
 
 interface ChartOptions {
   token: string;
@@ -33,85 +33,57 @@ const parseChartCommand = (args: string[]): ChartOptions => {
   return options;
 };
 
-function generateChartImage(prices: number[], width: number = 800, height: number = 400): Buffer {
-  const canvas = createCanvas(width, height);
-  const ctx = canvas.getContext('2d');
-
-  // Set background
-  ctx.fillStyle = '#1a1a1a';
-  ctx.fillRect(0, 0, width, height);
-
-  // Calculate chart dimensions
-  const padding = 40;
-  const chartWidth = width - (padding * 2);
-  const chartHeight = height - (padding * 2);
-
-  // Find min and max values
-  const min = Math.min(...prices);
-  const max = Math.max(...prices);
-  const range = max - min;
-
-  // Draw grid lines
-  ctx.strokeStyle = '#333333';
-  ctx.lineWidth = 1;
-
-  // Vertical grid lines
-  for (let i = 0; i <= 5; i++) {
-    const x = padding + (i * chartWidth / 5);
-    ctx.beginPath();
-    ctx.moveTo(x, padding);
-    ctx.lineTo(x, height - padding);
-    ctx.stroke();
+const formatNumber = (num: number): string => {
+  if (num >= 1000) {
+    return num.toLocaleString();
   }
+  return num.toFixed(2);
+};
 
-  // Horizontal grid lines
-  for (let i = 0; i <= 5; i++) {
-    const y = padding + (i * chartHeight / 5);
-    ctx.beginPath();
-    ctx.moveTo(padding, y);
-    ctx.lineTo(width - padding, y);
-    ctx.stroke();
-  }
+async function generateChartImage(prices: number[], width: number = 800, height: number = 400): Promise<Buffer> {
+  // Create a new image with sharp
+  const svg = `
+    <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+      <style>
+        .background { fill: #1a1a1a; }
+        .grid { stroke: #333333; stroke-width: 1; }
+        .price-line { stroke: #4CAF50; stroke-width: 2; fill: none; }
+        .text { fill: #ffffff; font-family: Arial; font-size: 12px; }
+      </style>
+      
+      <!-- Background -->
+      <rect class="background" width="100%" height="100%" />
+      
+      <!-- Grid lines -->
+      ${Array.from({ length: 6 }, (_, i) => {
+        const x = (width * i) / 5;
+        const y = (height * i) / 5;
+        return `
+          <line class="grid" x1="${x}" y1="0" x2="${x}" y2="${height}" />
+          <line class="grid" x1="0" y1="${y}" x2="${width}" y2="${y}" />
+        `;
+      }).join('')}
+      
+      <!-- Price line -->
+      <path class="price-line" d="M${prices.map((price, i) => {
+        const x = (width * i) / (prices.length - 1);
+        const y = height - ((price - Math.min(...prices)) / (Math.max(...prices) - Math.min(...prices))) * height;
+        return `${i === 0 ? 'M' : 'L'}${x},${y}`;
+      }).join(' ')}" />
+      
+      <!-- Price labels -->
+      ${Array.from({ length: 6 }, (_, i) => {
+        const value = Math.min(...prices) + (i * (Math.max(...prices) - Math.min(...prices)) / 5);
+        const y = (height * i) / 5;
+        return `<text class="text" x="10" y="${y + 15}">$${formatNumber(value)}</text>`;
+      }).join('')}
+    </svg>
+  `;
 
-  // Draw price line
-  ctx.strokeStyle = '#4CAF50';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-
-  prices.forEach((price, i) => {
-    const x = padding + (i * chartWidth / (prices.length - 1));
-    const y = height - padding - ((price - min) / range * chartHeight);
-    
-    if (i === 0) {
-      ctx.moveTo(x, y);
-    } else {
-      ctx.lineTo(x, y);
-    }
-  });
-
-  ctx.stroke();
-
-  // Draw price labels
-  ctx.fillStyle = '#ffffff';
-  ctx.font = '12px Arial';
-  ctx.textAlign = 'right';
-
-  // Y-axis labels
-  for (let i = 0; i <= 5; i++) {
-    const value = min + (i * range / 5);
-    const y = padding + (i * chartHeight / 5);
-    ctx.fillText(formatNumber(value), padding - 5, y + 4);
-  }
-
-  // X-axis labels (time)
-  ctx.textAlign = 'center';
-  const timeLabels = ['Start', '', '', '', 'End'];
-  for (let i = 0; i <= 4; i++) {
-    const x = padding + (i * chartWidth / 4);
-    ctx.fillText(timeLabels[i], x, height - padding + 15);
-  }
-
-  return canvas.toBuffer('image/png');
+  // Convert SVG to PNG
+  return await sharp(Buffer.from(svg))
+    .png()
+    .toBuffer();
 }
 
 const chartCommand: Command = {
@@ -159,7 +131,7 @@ const chartCommand: Command = {
       const chartWidth = options.wide ? 1200 : 800;
       const chartHeight = 400;
       
-      const imageBuffer = generateChartImage(prices, chartWidth, chartHeight);
+      const imageBuffer = await generateChartImage(prices, chartWidth, chartHeight);
       
       return {
         chat_id: userId,
@@ -169,7 +141,7 @@ const chartCommand: Command = {
                 `Low: $${formatNumber(Math.min(...prices))}\n` +
                 `Current: $${formatNumber(prices[prices.length - 1])}`
       };
-    } catch (error: unknown) {
+    } catch (error) {
       console.error('Error generating chart:', error);
       return {
         chat_id: userId,

@@ -21,7 +21,8 @@
     "elysia": "latest",
     "ky": "^1.8.0",
     "pg": "^8.11.3",
-    "postgres": "^3.4.3"
+    "postgres": "^3.4.3",
+    "sharp": "^0.34.1"
   },
   "devDependencies": {
     "bun-types": "latest",
