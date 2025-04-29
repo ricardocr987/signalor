@@ -52,7 +52,8 @@ export class AlertManager {
     const alerts = this.activeAlerts.get(symbol);
     if (!alerts) return;
 
-    await Promise.all(alerts.map(async (alert) => {
+    // Process alerts sequentially to avoid race conditions
+    for (const alert of alerts) {
       if (this.shouldTriggerAlert(alert, currentPrice)) {
                 
         // Unsubscribe using the alert ID and type
@@ -68,9 +69,10 @@ export class AlertManager {
             symbolAlerts.splice(index, 1);
           }
         }
-        this.triggerAlert(alert, currentPrice);
+        // Send alert message
+        await this.triggerAlert(alert, currentPrice);
       }
-    }));
+    }
   }
 
   private shouldTriggerAlert(alert: Alert, currentPrice: number): boolean {
@@ -129,7 +131,7 @@ export class AlertManager {
         // Unsubscribe using the alert ID and type
         priceFeedService.unsubscribeById(alertId, 'alert');
         // Deactivate in database
-        deactivateAlert(alertId);
+        await deactivateAlert(alertId);
 
         // Remove from active alerts
         const index = alerts.indexOf(alert);
