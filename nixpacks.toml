@@ -3,7 +3,7 @@ nixPkgs = ['bun']
 aptPkgs = ["unzip", "build-essential", "pkg-config", "libcairo2-dev", "libpango1.0-dev", "libjpeg-dev", "libgif-dev", "librsvg2-dev"]
 cmds = [
   'bun remove sharp',
-  'bun add sharp@0.32.6 --platform=linux --arch=x64 --target=20x'
+  'bun add sharp@0.34.1 --arch=x64 --platform=linuxmusl'
 ]
 
 [phases.update]

@@ -25,6 +25,9 @@
         "bun-types": "latest",
         "drizzle-kit": "^0.20.14",
       },
+      "optionalDependencies": {
+        "@img/sharp-linux-x64": "^0.34.1",
+      },
     },
   },
   "packages": {
