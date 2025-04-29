@@ -55,6 +55,8 @@ export class AlertManager {
     // Process alerts sequentially to avoid race conditions
     for (const alert of alerts) {
       if (this.shouldTriggerAlert(alert, currentPrice)) {
+        // Unsubscribe using the alert ID and type
+        priceFeedService.unsubscribeById(alert.id, 'alert');
         // Remove from active alerts
         const symbolAlerts = this.activeAlerts.get(alert.symbol);
         if (symbolAlerts) {
@@ -65,8 +67,6 @@ export class AlertManager {
         }
         // Send alert message
         await this.triggerAlert(alert, currentPrice);
-        // Unsubscribe using the alert ID and type
-        priceFeedService.unsubscribeById(alert.id, 'alert');
         // Deactivate the alert after triggering
         await deactivateAlert(alert.id);
       }
