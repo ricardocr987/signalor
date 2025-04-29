@@ -196,17 +196,17 @@ class OrderManager {
 
   public async addOrder(userId: number, inputMint: string, outputMint: string, price: number, amount: number): Promise<Order> {
     // Get token metadata for input token
-    const inputTokenMetadata = await getTokenMetadata(inputMint);
-    if (!inputTokenMetadata) {
-      console.error(`No metadata found for token ${inputMint}`);
-      throw new Error(`No metadata found for token ${inputMint}`);
+    const outputTokenMetadata = await getTokenMetadata(outputMint);
+    if (!outputTokenMetadata) {
+      console.error(`No metadata found for token ${outputMint}`);
+      throw new Error(`No metadata found for token ${outputMint}`);
     }
     
     // Create order in database with both mint and symbol
     const order = await createOrder(
       userId,
       inputMint, 
-      inputTokenMetadata.symbol,
+      outputTokenMetadata.symbol,
       outputMint, 
       price, 
       amount
@@ -219,7 +219,7 @@ class OrderManager {
     this.activeOrders.get(inputMint)?.push(order);
     
     // Subscribe to price updates for this symbol and store the callback ID
-    this.subscribeToSymbol(inputTokenMetadata.symbol, order.id);
+    this.subscribeToSymbol(outputTokenMetadata.symbol, order.id);
         
     return order;
   }
