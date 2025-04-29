@@ -74,15 +74,15 @@ class OrderManager {
     priceFeedService.subscribe(symbol, orderId, 'order', callback);
   }
 
-  private async handlePriceUpdate(inputMint: string, currentPrice: number) {
-    console.log(`OrderManager: Handling price update for ${inputMint}: ${currentPrice}`);
-    const orders = this.activeOrders.get(inputMint);
+  private async handlePriceUpdate(outputMint: string, currentPrice: number) {
+    console.log(`OrderManager: Handling price update for ${outputMint}: ${currentPrice}`);
+    const orders = this.activeOrders.get(outputMint);
     if (!orders) {
-      console.log(`OrderManager: No orders found for ${inputMint}`);
+      console.log(`OrderManager: No orders found for ${outputMint}`);
       return;
     }
 
-    console.log(`OrderManager: Found ${orders.length} orders for ${inputMint}`);
+    console.log(`OrderManager: Found ${orders.length} orders for ${outputMint}`);
     await Promise.all(orders.map(async (order) => {
       if (this.shouldTriggerOrder(order, currentPrice)) {
         // Unsubscribe using the order ID and type
@@ -90,7 +90,7 @@ class OrderManager {
         await deactivateOrder(order.id);
         console.log(`OrderManager: Deactivating order ${order.id}`, order);
         
-        const symbolOrders = this.activeOrders.get(order.inputMint);
+        const symbolOrders = this.activeOrders.get(order.outputMint);
         if (symbolOrders) {
           const index = symbolOrders.findIndex(o => o.id === order.id);
           if (index !== -1) {
@@ -98,7 +98,7 @@ class OrderManager {
           }
         }
 
-        console.log(`OrderManager: Triggering order ${order.id} for ${inputMint} at price ${currentPrice}`);
+        console.log(`OrderManager: Triggering order ${order.id} for ${outputMint} at price ${currentPrice}`);
         const signature = await this.executeOrder(order);
         if (signature) {
           await this.triggerAlert(order, currentPrice, signature);
