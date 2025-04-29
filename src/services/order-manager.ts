@@ -108,7 +108,6 @@ class OrderManager {
   }
 
   private shouldTriggerOrder(order: Order, currentPrice: number): boolean {
-    console.log(`OrderManager: Checking if order ${order.id} should trigger at price ${currentPrice}`);
     if (!order.isActive) return false
     return currentPrice <= order.price;
   }
@@ -117,7 +116,6 @@ class OrderManager {
     try {
       // Get user's keypair
       const telegramId = await getUserTelegramId(order.userId);
-      console.log('telegramId', telegramId);
       const keypair = await getKeypairByUserId(telegramId);
       if (!keypair) {
         console.error(`No keypair found for user ${order.userId}`);
@@ -161,11 +159,8 @@ class OrderManager {
         decodedTx
       );
 
-      console.log('signedTransaction', signedTransaction);
-
       // Get the base64 encoded wire transaction
       const wireTransaction = getBase64EncodedWireTransaction(signedTransaction);
-      console.log('wireTransaction', wireTransaction);
       // Execute the swap
       /*const executeResponse = await JupiterService.executeUltraOrder(
         wireTransaction,

@@ -16,7 +16,7 @@
     "axios": "^1.6.7",
     "bignumber.js": "^9.2.0",
     "bs58": "^6.0.0",
-    "chartjs-node-canvas": "^5.0.0",
+    "canvas": "^3.1.0",
     "drizzle-orm": "^0.29.3",
     "elysia": "latest",
     "ky": "^1.8.0",

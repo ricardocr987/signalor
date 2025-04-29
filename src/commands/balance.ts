@@ -47,8 +47,7 @@ const balanceCommand: Command = {
                 `Name: ${token.name}\n` +
                 `Amount: ${token.amount.toLocaleString()}\n` +
                 `Value: $${token.valueUsd.toLocaleString()} (${Number(token.amount).toFixed(4)} SOL)\n` +
-                `Mint: \`${token.mintAddress}\`\n` +
-                `Status: ${token.verified ? '✅ Verified' : '⚠️ Unverified'}`
+                `Mint: \`${token.mintAddress}\`\n`
         };
       }
 
@@ -57,8 +56,7 @@ const balanceCommand: Command = {
         `💰 ${token.symbol} (${token.name}):\n` +
         `Amount: ${token.amount.toLocaleString()}\n` +
         `Value: $${token.valueUsd.toLocaleString()} (${Number(token.amount).toFixed(4)} SOL)\n` +
-        `Mint: \`${token.mintAddress}\`\n` +
-        `Status: ${token.verified ? '✅ Verified' : '⚠️ Unverified'}`
+        `Mint: \`${token.mintAddress}\`\n`
       ).join('\n');
 
       return {

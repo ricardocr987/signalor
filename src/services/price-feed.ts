@@ -65,9 +65,7 @@ export class PriceFeedService {
       price: parseFloat(update.price),
       timestamp: update.timestamp || Date.now()
     };
-    console.log('symbol', symbol);
-    console.log('priceUpdate', priceUpdate);
-    console.log('callbacks', callbacks);
+
     callbacks.forEach(entry => entry.callback(priceUpdate));
   }
 
