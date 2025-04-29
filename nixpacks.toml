@@ -1,7 +1,6 @@
 [phases.setup]
 nixPkgs = ['bun']
-aptPkgs = ["unzip", "build-essential", "pkg-config", "libcairo2-dev", "libpango1.0-dev", "libjpeg-dev", "libgif-dev", "librsvg2-dev"]
-cmds = ['bun install --include=optional sharp']
+aptPkgs = ["unzip""]
 
 [phases.update]
 cmds = ['bun upgrade']

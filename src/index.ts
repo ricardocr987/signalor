@@ -26,7 +26,7 @@ const app = new Elysia()
       console.error('Failed to initialize services:', error);
     }
   })
-  .get("/", () => "Hello Elysia")
+  .get("/", () => "Bot running")
   .post("/", async (context) => {
     // Verify Telegram webhook
     const telegramToken = context.headers['x-telegram-bot-api-secret-token'];
@@ -88,61 +88,73 @@ const loadCommands = async (): Promise<Record<string, Command>> => {
   const commands: Record<string, Command> = {};
   const commandsDir = path.join(__dirname, 'commands');
   
+  // Generate help text for all commands
+  const generateHelpText = (commands: Record<string, Command>) => {
+    return Object.values(commands)
+      .map(cmd => {
+        let helpText = `/${cmd.name} - ${cmd.description}`;
+        // Add argument descriptions based on command
+        switch (cmd.name) {
+          case 'price':
+            helpText += '\n  Usage: /price <token_symbol>';
+            break;
+          case 'alert':
+            helpText += '\n  Usage: /alert <token> <price> <above|below>\n  Or: /alert show\n  Or: /alert remove';
+            break;
+          case 'balance':
+            helpText += '\n  Usage: /balance <token_symbol>';
+            break;
+          case 'trades':
+            helpText += '\n  Usage: /trades <token_symbol>';
+            break;
+          case 'holders':
+            helpText += '\n  Usage: /holders <token_symbol>';
+            break;
+          case 'value':
+            helpText += '\n  Usage: /value <token_symbol>';
+            break;
+          case 'swap':
+            helpText += '\n  Usage: /swap <from_token> <to_token> <amount>';
+            break;
+          case 'order':
+            helpText += '\n  Usage: /order <token> <side> <price> <amount>';
+            break;
+          case 'keypair':
+            helpText += '\n  Usage: /keypair [show]\n  Generate a new Solana keypair or show existing one';
+            break;
+        }
+        return helpText;
+      })
+      .join('\n\n');
+  };
+
   // Basic commands
   commands['start'] = {
     name: 'start',
     description: 'Show welcome message',
     execute: async (userId: number) => {
-      const commandList = Object.values(commands)
-        .map(cmd => {
-          let helpText = `/${cmd.name} - ${cmd.description}`;
-          // Add argument descriptions based on command
-          switch (cmd.name) {
-            case 'price':
-              helpText += '\n  Usage: /price <token_symbol>';
-              break;
-            case 'alert':
-              helpText += '\n  Usage: /alert <token> <price> <above|below>\n  Or: /alert show\n  Or: /alert remove';
-              break;
-            case 'chart':
-              helpText += '\n  Usage: /chart <token> [timeframe] [options]\n  Timeframes: 1m, 5m, 15m, 30m, 1h, 4h, 12h, 1d, 1w\n  Options: wide, mc, ma';
-              break;
-            case 'balance':
-              helpText += '\n  Usage: /balance <token_symbol>';
-              break;
-            case 'trades':
-              helpText += '\n  Usage: /trades <token_symbol>';
-              break;
-            case 'holders':
-              helpText += '\n  Usage: /holders <token_symbol>';
-              break;
-            case 'value':
-              helpText += '\n  Usage: /value <token_symbol>';
-              break;
-            case 'swap':
-              helpText += '\n  Usage: /swap <from_token> <to_token> <amount>';
-              break;
-            case 'order':
-              helpText += '\n  Usage: /order <token> <side> <price> <amount>';
-              break;
-            case 'keypair':
-              helpText += '\n  Usage: /keypair [show]\n  Generate a new Solana keypair or show existing one';
-              break;
-          }
-          return helpText;
-        })
-        .join('\n\n');
+      const commandList = generateHelpText(commands);
       
       return {
         chat_id: userId,
         text: `🚀 Welcome to Signalor Bot!\n\n` +
-              `To get started, you need to generate a Solana keypair first. This is required for trading and other wallet-related operations.\n\n` +
-              `1. Generate your keypair:\n` +
-              `   Use /keypair to generate a new Solana keypair\n` +
-              `   Use /keypair show to view your existing keypair\n\n` +
-              `⚠️ IMPORTANT: Store your private key securely and never share it with anyone!\n\n` +
-              `Here are all available commands:\n\n${commandList}\n\n` +
-              `Need help? Use /help for detailed command information.`
+              `I'm your personal trading assistant for Solana tokens. Here's how to get started:\n\n` +
+              `1. 🔑 Setup Your Wallet\n` +
+              `   • Use /keypair to generate a new Solana keypair\n` +
+              `   • Use /keypair show to view your existing keypair\n` +
+              `   ⚠️ IMPORTANT: Store your private key securely and never share it!\n\n` +
+              `2. 📊 Check Token Information\n` +
+              `   • Use /price <token> to check current prices\n` +
+              `   • Use /trades <token> to see recent trades\n` +
+              `   • Use /holders <token> to view holder statistics\n\n` +
+              `3. 💰 Trading Features\n` +
+              `   • Use /swap to exchange tokens\n` +
+              `   • Use /order to place limit orders\n` +
+              `   • Use /balance to check your holdings\n\n` +
+              `4. 🔔 Price Alerts\n` +
+              `   • Use /alert to set price notifications\n` +
+              `   • Example: /alert SOL 100 above\n\n` +
+              `Here are all available commands:\n\n${commandList}\n\n`
       };
     }
   };
@@ -151,46 +163,11 @@ const loadCommands = async (): Promise<Record<string, Command>> => {
     name: 'help',
     description: 'Show help information',
     execute: async (userId: number) => {
-      const commandList = Object.values(commands)
-        .map(cmd => {
-          let helpText = `/${cmd.name} - ${cmd.description}`;
-          // Add argument descriptions based on command
-          switch (cmd.name) {
-            case 'price':
-              helpText += '\n  Usage: /price <token_symbol>';
-              break;
-            case 'alert':
-              helpText += '\n  Usage: /alert <token> <price> <above|below>\n  Or: /alert show\n  Or: /alert remove';
-              break;
-            case 'chart':
-              helpText += '\n  Usage: /chart <token> [timeframe] [options]\n  Timeframes: 1m, 5m, 15m, 30m, 1h, 4h, 12h, 1d, 1w\n  Options: wide, mc, ma';
-              break;
-            case 'balance':
-              helpText += '\n  Usage: /balance <token_symbol>';
-              break;
-            case 'trades':
-              helpText += '\n  Usage: /trades <token_symbol>';
-              break;
-            case 'holders':
-              helpText += '\n  Usage: /holders <token_symbol>';
-              break;
-            case 'value':
-              helpText += '\n  Usage: /value <token_symbol>';
-              break;
-            case 'swap':
-              helpText += '\n  Usage: /swap <from_token> <to_token> <amount>';
-              break;
-            case 'order':
-              helpText += '\n  Usage: /order <token> <side> <price> <amount>';
-              break;
-          }
-          return helpText;
-        })
-        .join('\n\n');
+      const commandList = generateHelpText(commands);
       
       return {
         chat_id: userId,
-        text: `Available commands:\n\n${commandList}`
+        text: `📚 Available Commands:\n\n${commandList}\n\n`
       };
     }
   };
