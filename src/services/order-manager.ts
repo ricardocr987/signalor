@@ -123,15 +123,15 @@ class OrderManager {
       }
 
       // Get token metadata for output token
-      const outputTokenMetadata = await getTokenMetadata(order.outputMint);
-      if (!outputTokenMetadata) {
-        console.error(`No metadata found for token ${order.outputMint}`);
+      const inputTokenMetadata = await getTokenMetadata(order.inputMint);
+      if (!inputTokenMetadata) {
+        console.error(`No metadata found for token ${order.inputMint}`);
         return;
       }
 
       // Calculate total input amount
       const parsedAmount = new BigNumber(order.amount).multipliedBy(
-        10 ** outputTokenMetadata.decimals
+        10 ** inputTokenMetadata.decimals
       );
 
       // Get Ultra order
