@@ -66,10 +66,10 @@ const orderCommand: Command = {
       };
     }
 
-    const inputToken = args[0];
-    const outputToken = args[1];
-    const price = parseFloat(args[2]);
-    const amount = parseFloat(args[3]);
+    const inputToken = args[0]; // USDC
+    const outputToken = args[1]; // SOL
+    const price = parseFloat(args[2]); // 100
+    const amount = parseFloat(args[3]); // 1
 
     if (isNaN(price) || isNaN(amount)) {
       return {

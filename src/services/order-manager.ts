@@ -68,7 +68,7 @@ class OrderManager {
         order => order.inputSymbol === symbol
       );
       orders.forEach(async (order) => {
-        await this.handlePriceUpdate(order.inputMint, update.price);
+        await this.handlePriceUpdate(order.outputMint, update.price);
       });
     };
     priceFeedService.subscribe(symbol, orderId, 'order', callback);
