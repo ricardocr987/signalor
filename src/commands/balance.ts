@@ -59,9 +59,10 @@ const balanceCommand: Command = {
         `Mint: \`${token.mintAddress}\`\n`
       ).join('\n');
 
+      const totalValue = balances.data.reduce((sum, token) => sum + Number(token.valueUsd), 0);
       return {
         chat_id: userId,
-        text: `🔍 Your Token Balances:\n\n${balanceList}\n\nTotal Assets: $${balances.data.reduce((sum, token) => sum + token.valueUsd, 0).toFixed(2)}`
+        text: `🔍 Your Token Balances:\n\n${balanceList}\n\nTotal Assets: $${totalValue.toFixed(2)}`
       };
     } catch (error) {
       console.error('Error checking balances:', error);

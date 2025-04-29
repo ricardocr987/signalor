@@ -94,12 +94,55 @@ const loadCommands = async (): Promise<Record<string, Command>> => {
     description: 'Show welcome message',
     execute: async (userId: number) => {
       const commandList = Object.values(commands)
-        .map(cmd => `/${cmd.name} - ${cmd.description}`)
-        .join('\n');
+        .map(cmd => {
+          let helpText = `/${cmd.name} - ${cmd.description}`;
+          // Add argument descriptions based on command
+          switch (cmd.name) {
+            case 'price':
+              helpText += '\n  Usage: /price <token_symbol>';
+              break;
+            case 'alert':
+              helpText += '\n  Usage: /alert <token> <price> <above|below>\n  Or: /alert show\n  Or: /alert remove';
+              break;
+            case 'chart':
+              helpText += '\n  Usage: /chart <token> [timeframe] [options]\n  Timeframes: 1m, 5m, 15m, 30m, 1h, 4h, 12h, 1d, 1w\n  Options: wide, mc, ma';
+              break;
+            case 'balance':
+              helpText += '\n  Usage: /balance <token_symbol>';
+              break;
+            case 'trades':
+              helpText += '\n  Usage: /trades <token_symbol>';
+              break;
+            case 'holders':
+              helpText += '\n  Usage: /holders <token_symbol>';
+              break;
+            case 'value':
+              helpText += '\n  Usage: /value <token_symbol>';
+              break;
+            case 'swap':
+              helpText += '\n  Usage: /swap <from_token> <to_token> <amount>';
+              break;
+            case 'order':
+              helpText += '\n  Usage: /order <token> <side> <price> <amount>';
+              break;
+            case 'keypair':
+              helpText += '\n  Usage: /keypair [show]\n  Generate a new Solana keypair or show existing one';
+              break;
+          }
+          return helpText;
+        })
+        .join('\n\n');
       
       return {
         chat_id: userId,
-        text: `Welcome to Signalor Bot! 🚀\n\nHere are the available commands:\n\n${commandList}`
+        text: `🚀 Welcome to Signalor Bot!\n\n` +
+              `To get started, you need to generate a Solana keypair first. This is required for trading and other wallet-related operations.\n\n` +
+              `1. Generate your keypair:\n` +
+              `   Use /keypair to generate a new Solana keypair\n` +
+              `   Use /keypair show to view your existing keypair\n\n` +
+              `⚠️ IMPORTANT: Store your private key securely and never share it with anyone!\n\n` +
+              `Here are all available commands:\n\n${commandList}\n\n` +
+              `Need help? Use /help for detailed command information.`
       };
     }
   };
@@ -109,8 +152,41 @@ const loadCommands = async (): Promise<Record<string, Command>> => {
     description: 'Show help information',
     execute: async (userId: number) => {
       const commandList = Object.values(commands)
-        .map(cmd => `/${cmd.name} - ${cmd.description}`)
-        .join('\n');
+        .map(cmd => {
+          let helpText = `/${cmd.name} - ${cmd.description}`;
+          // Add argument descriptions based on command
+          switch (cmd.name) {
+            case 'price':
+              helpText += '\n  Usage: /price <token_symbol>';
+              break;
+            case 'alert':
+              helpText += '\n  Usage: /alert <token> <price> <above|below>\n  Or: /alert show\n  Or: /alert remove';
+              break;
+            case 'chart':
+              helpText += '\n  Usage: /chart <token> [timeframe] [options]\n  Timeframes: 1m, 5m, 15m, 30m, 1h, 4h, 12h, 1d, 1w\n  Options: wide, mc, ma';
+              break;
+            case 'balance':
+              helpText += '\n  Usage: /balance <token_symbol>';
+              break;
+            case 'trades':
+              helpText += '\n  Usage: /trades <token_symbol>';
+              break;
+            case 'holders':
+              helpText += '\n  Usage: /holders <token_symbol>';
+              break;
+            case 'value':
+              helpText += '\n  Usage: /value <token_symbol>';
+              break;
+            case 'swap':
+              helpText += '\n  Usage: /swap <from_token> <to_token> <amount>';
+              break;
+            case 'order':
+              helpText += '\n  Usage: /order <token> <side> <price> <amount>';
+              break;
+          }
+          return helpText;
+        })
+        .join('\n\n');
       
       return {
         chat_id: userId,
