@@ -1,6 +1,6 @@
 [phases.setup]
 nixPkgs = ['bun']
-aptPkgs = ["unzip""]
+aptPkgs = ["unzip"]
 
 [phases.update]
 cmds = ['bun upgrade']
