@@ -46,7 +46,7 @@ const balanceCommand: Command = {
           text: `🔍 ${token.symbol} Balance:\n\n` +
                 `Name: ${token.name}\n` +
                 `Amount: ${token.amount.toLocaleString()}\n` +
-                `Value: $${token.valueUsd.toLocaleString()} (${Number(token.amount).toFixed(4)} SOL)\n` +
+                `Value: $${token.valueUsd.toLocaleString()} (${Number(token.amount).toFixed(4)} ${token.symbol})\n` +
                 `Mint: \`${token.mintAddress}\`\n`
         };
       }
@@ -55,7 +55,7 @@ const balanceCommand: Command = {
       const balanceList = balances.data.map(token => 
         `💰 ${token.symbol} (${token.name}):\n` +
         `Amount: ${token.amount.toLocaleString()}\n` +
-        `Value: $${token.valueUsd.toLocaleString()} (${Number(token.amount).toFixed(4)} SOL)\n` +
+        `Value: $${token.valueUsd.toLocaleString()} (${Number(token.amount).toFixed(4)} ${token.symbol})\n` +
         `Mint: \`${token.mintAddress}\`\n`
       ).join('\n');
 
