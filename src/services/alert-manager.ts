@@ -1,4 +1,4 @@
-import { Alert, createAlert, getUserAlerts, deactivateAlert, getAllActiveAlerts, getUserTelegramId } from '../db/index';
+import { Alert, createAlert, getUserAlerts, deactivateAlert, getAllActiveAlerts, getUserTelegramId, getAlertById } from '../db/index';
 import { priceFeedService } from './price-feed';
 import { config } from '../config';
 
@@ -86,6 +86,11 @@ export class AlertManager {
 
   private async triggerAlert(alert: Alert, currentPrice: number) {
     try {
+      const dbAlert = await getAlertById(alert.id);
+      if (!dbAlert || dbAlert[0].isActive === false) {
+        console.error('Should not trigger alert');
+        return;
+      }
       // Send alert to user via Telegram
       const message = `🔔 Alert Triggered!\n\n${alert.symbol} is now $${currentPrice.toFixed(2)}\n\nYour alert was set for when price goes ${alert.condition} $${alert.price}`;
       const telegramId = await getUserTelegramId(alert.userId);

@@ -101,6 +101,17 @@ export const createAlert = async (userId: number, symbol: string, price: number,
   }
 };
 
+export const getAlertById = async (id: number) => {
+  try {
+    return await db.select()
+      .from(schema.alerts)
+      .where(eq(schema.alerts.id, id));
+  } catch (error) {
+    console.error('Error getting alert by id:', error);
+    throw error;
+  }
+};
+
 export const getUserAlerts = async (userId: number) => {
   try {
     const dbUser = await ensureUserExists(userId);
