@@ -1,12 +1,14 @@
 [phases.setup]
 nixPkgs = ['bun']
 aptPkgs = ["unzip"]
+cmds = ['bun add sharp --platform=linux --arch=x64']
+
 [phases.update]
 cmds = ['bun upgrade']
 dependsOn = ["setup"]
+
 [phases.build]
 cmds = ['bun build --compile --minify-whitespace --minify-syntax --sourcemap --target bun ./src/index.ts --outfile dist/api']
-
 
 [start]
 cmd = 'bun run dev'

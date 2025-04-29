@@ -80,10 +80,9 @@ async function generateChartImage(prices: number[], width: number = 800, height:
     </svg>
   `;
 
-  // Convert SVG to PNG
-  return await sharp(Buffer.from(svg))
-    .png()
-    .toBuffer();
+  // Convert SVG to PNG using sharp
+  const image = sharp(Buffer.from(svg));
+  return await image.png().toBuffer();
 }
 
 const chartCommand: Command = {
