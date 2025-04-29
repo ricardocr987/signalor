@@ -1,7 +1,10 @@
 [phases.setup]
 nixPkgs = ['bun']
-aptPkgs = ["unzip"]
-cmds = ['bun add sharp --platform=linux --arch=x64']
+aptPkgs = ["unzip", "build-essential", "pkg-config", "libcairo2-dev", "libpango1.0-dev", "libjpeg-dev", "libgif-dev", "librsvg2-dev"]
+cmds = [
+  'bun remove sharp',
+  'bun add sharp@0.32.6 --platform=linux --arch=x64 --target=20x'
+]
 
 [phases.update]
 cmds = ['bun upgrade']
