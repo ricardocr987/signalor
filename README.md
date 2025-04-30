@@ -144,8 +144,7 @@ Replace:
 - **Environment Variables**: Secure storage of sensitive data
 - **User-specific Keypairs**: Individual keypair management for each user
 
-> ⚠️ **Security Note**: This bot stores user private keys in the database for automated trading functionality. While we implement security measures, please be aware that:
-> - Private keys are stored in the database and could potentially be accessed if the database is compromised
+> ⚠️ **Security Note**: This bot stores user private keys in the database for automated trading functionality.
 > - Use the bot at your own risk and only with amounts you're comfortable with
 
 ## 🧪 Testing the Bot
