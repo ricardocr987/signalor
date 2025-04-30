@@ -68,13 +68,50 @@ const app = new Elysia()
         };
       }
 
-      await fetch(`https://api.telegram.org/bot${config.BOT_TELEGRAM_KEY}/sendMessage`, {
-        method: 'post',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(replyPayload)
-      });
+      // Send response based on type
+      if (replyPayload.photo) {
+        // Create multipart form data for photo upload
+        const boundary = '----WebKitFormBoundary' + Math.random().toString(36).substring(2);
+        let formData = Buffer.concat([
+          Buffer.from(`--${boundary}\r\n`),
+          Buffer.from('Content-Disposition: form-data; name="chat_id"\r\n\r\n'),
+          Buffer.from(replyPayload.chat_id.toString()),
+          Buffer.from(`\r\n--${boundary}\r\n`),
+          Buffer.from('Content-Disposition: form-data; name="photo"; filename="chart.png"\r\n'),
+          Buffer.from('Content-Type: image/png\r\n\r\n'),
+          replyPayload.photo,
+        ]);
+
+        if (replyPayload.caption) {
+          formData = Buffer.concat([
+            formData,
+            Buffer.from(`\r\n--${boundary}\r\n`),
+            Buffer.from('Content-Disposition: form-data; name="caption"\r\n\r\n'),
+            Buffer.from(replyPayload.caption),
+          ]);
+        }
+
+        formData = Buffer.concat([
+          formData,
+          Buffer.from(`\r\n--${boundary}--\r\n`)
+        ]);
+
+        await fetch(`https://api.telegram.org/bot${config.BOT_TELEGRAM_KEY}/sendPhoto`, {
+          method: 'post',
+          headers: {
+            'Content-Type': `multipart/form-data; boundary=${boundary}`
+          },
+          body: formData
+        });
+      } else {
+        await fetch(`https://api.telegram.org/bot${config.BOT_TELEGRAM_KEY}/sendMessage`, {
+          method: 'post',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(replyPayload)
+        });
+      }
 
       // const responseData = await replyStatus.json();
       // console.log(responseData);
