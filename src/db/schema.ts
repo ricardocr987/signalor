@@ -30,8 +30,9 @@ export const orders = pgTable('orders', {
   inputMint: text('input_mint').notNull(),
   inputSymbol: text('input_symbol').notNull(),
   outputMint: text('output_mint').notNull(),
-  price: real('price').notNull(),
-  amount: real('amount').notNull(),
+  outputSymbol: text('output_symbol').notNull(),
+  outputTokenPrice: real('output_token_price').notNull(),
+  inputTokenAmount: real('input_token_amount').notNull(),
   isActive: boolean('is_active').default(true),
   createdAt: timestamp('created_at').defaultNow()
 });

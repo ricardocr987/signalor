@@ -207,7 +207,7 @@ loadCommands().then(loadedCommands => {
   console.log('Commands loaded:', Object.keys(commands));
 });
 
-app.listen(3000);
+app.listen(3001);
 
 console.log(
   `🦊 Elysia is running at ${app.server?.hostname}:${app.server?.port}`

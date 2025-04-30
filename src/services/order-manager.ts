@@ -65,7 +65,7 @@ class OrderManager {
       console.log(`OrderManager: Received price update for ${symbol}: ${update.price}`);
       // Find all orders with this symbol
       const orders = Array.from(this.activeOrders.values()).flat().filter(
-        order => order.inputSymbol === symbol
+        order => order.outputSymbol === symbol
       );
       orders.forEach(async (order) => {
         await this.handlePriceUpdate(order.outputMint, update.price);
@@ -83,11 +83,10 @@ class OrderManager {
     }
 
     console.log(`OrderManager: Found ${orders.length} orders for ${outputMint}`);
-    await Promise.all(orders.map(async (order) => {
+    for (const order of orders) {
       if (this.shouldTriggerOrder(order, currentPrice)) {
         // Unsubscribe using the order ID and type
         priceFeedService.unsubscribeById(order.id, 'order');
-        await deactivateOrder(order.id);
         console.log(`OrderManager: Deactivating order ${order.id}`, order);
         
         const symbolOrders = this.activeOrders.get(order.outputMint);
@@ -102,81 +101,102 @@ class OrderManager {
         const signature = await this.executeOrder(order);
         if (signature) {
           await this.triggerAlert(order, currentPrice, signature);
+          await deactivateOrder(order.id);
         }
       }
-    }));
+    }
   }
 
   private shouldTriggerOrder(order: Order, currentPrice: number): boolean {
     if (!order.isActive) return false
-    return currentPrice <= order.price;
+    return currentPrice <= order.outputTokenPrice;
   }
 
   private async executeOrder(order: Order): Promise<string | undefined> {
-    try {
-      // Get user's keypair
-      const telegramId = await getUserTelegramId(order.userId);
-      const keypair = await getKeypairByUserId(telegramId);
-      if (!keypair) {
-        console.error(`No keypair found for user ${order.userId}`);
-        return;
+    const maxRetries = 3;
+    const retryDelay = 2000; // 2 seconds
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        // Get user's keypair
+        const telegramId = await getUserTelegramId(order.userId);
+        const keypair = await getKeypairByUserId(telegramId);
+        if (!keypair) {
+          console.error(`No keypair found for user ${order.userId}`);
+          return;
+        }
+
+        // Get token metadata for input token
+        const inputTokenMetadata = await getTokenMetadata(order.inputMint);
+        if (!inputTokenMetadata) {
+          console.error(`No metadata found for token ${order.inputMint}`);
+          return;
+        }
+
+        // Calculate total input amount
+        const parsedAmount = new BigNumber(order.inputTokenAmount).multipliedBy(
+          10 ** inputTokenMetadata.decimals
+        );
+
+        // Get Ultra order
+        const orderResponse = await JupiterService.getUltraOrder(
+          order.inputMint,
+          order.outputMint,
+          parsedAmount.toString(),
+          keypair.publicKey
+        );
+
+        if (!orderResponse.transaction) {
+          console.error('Failed to create swap transaction');
+          return;
+        }
+
+        // Convert base64 transaction to bytes
+        const transactionBytes = base64Encoder.encode(orderResponse.transaction);
+        const decodedTx = transactionDecoder.decode(transactionBytes);
+
+        // Sign the transaction
+        const userKeypair = Keypair.fromSecretKey(bs58.decode(keypair.privateKey));
+        const solanaKeypair = await createKeyPairFromBytes(userKeypair.secretKey);
+        const signedTransaction = await signTransaction(
+          [solanaKeypair],
+          decodedTx
+        );
+
+        // Get the base64 encoded wire transaction
+        const wireTransaction = getBase64EncodedWireTransaction(signedTransaction);
+        
+        try {
+          const signature = await confirmTransaction(wireTransaction);
+          if (signature) {
+            console.log(`Successfully executed order ${order.id} on attempt ${attempt}`);
+            return signature;
+          }
+        } catch (error) {
+          console.error(`Error confirming transaction on attempt ${attempt}:`, error);
+          if (attempt < maxRetries) {
+            console.log(`Retrying in ${retryDelay}ms...`);
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+            continue;
+          }
+          throw error;
+        }
+      } catch (error) {
+        console.error(`Error executing order ${order.id} on attempt ${attempt}:`, error);
+        if (attempt < maxRetries) {
+          console.log(`Retrying in ${retryDelay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          continue;
+        }
+        throw error;
       }
-
-      // Get token metadata for output token
-      const inputTokenMetadata = await getTokenMetadata(order.inputMint);
-      if (!inputTokenMetadata) {
-        console.error(`No metadata found for token ${order.inputMint}`);
-        return;
-      }
-
-      // Calculate total input amount
-      const parsedAmount = new BigNumber(order.amount).multipliedBy(
-        10 ** inputTokenMetadata.decimals
-      );
-
-      // Get Ultra order
-      const orderResponse = await JupiterService.getUltraOrder(
-        order.inputMint,
-        order.outputMint,
-        parsedAmount.toString(),
-        keypair.publicKey
-      );
-
-      if (!orderResponse.transaction) {
-        console.error('Failed to create swap transaction');
-        return;
-      }
-
-      // Convert base64 transaction to bytes
-      const transactionBytes = base64Encoder.encode(orderResponse.transaction);
-      const decodedTx = transactionDecoder.decode(transactionBytes);
-
-      // Sign the transaction
-      const userKeypair = Keypair.fromSecretKey(bs58.decode(keypair.privateKey));
-      const solanaKeypair = await createKeyPairFromBytes(userKeypair.secretKey);
-      const signedTransaction = await signTransaction(
-        [solanaKeypair],
-        decodedTx
-      );
-
-      // Get the base64 encoded wire transaction
-      const wireTransaction = getBase64EncodedWireTransaction(signedTransaction);
-      // Execute the swap
-      /*const executeResponse = await JupiterService.executeUltraOrder(
-        wireTransaction,
-        orderResponse.requestId
-      );*/
-
-      return await confirmTransaction(wireTransaction);
-    } catch (error) {
-      console.error(`Error executing order ${order.id}:`, error);
     }
   }
 
   private async triggerAlert(order: Order, currentPrice: number, signature: string) {
     try {
         // Send alert to user via Telegram
-        const message = `🔔 Order Triggered!\n\n${order.inputSymbol} is now $${currentPrice.toFixed(2)}\n\n $${currentPrice.toFixed(2)}\n\nSignature: ${signature}\n\nhttps://solscan.io/tx/${signature}`;
+        const message = `�� Order Triggered!\n\n${order.outputSymbol} is now $${currentPrice.toFixed(2)}\n\nSignature: ${signature}\n\nhttps://solscan.io/tx/${signature}`;
         const telegramId = await getUserTelegramId(order.userId);
 
         await fetch(`https://api.telegram.org/bot${config.BOT_TELEGRAM_KEY}/sendMessage`, {
@@ -194,32 +214,34 @@ class OrderManager {
       }
   }
 
-  public async addOrder(userId: number, inputMint: string, outputMint: string, price: number, amount: number): Promise<Order> {
-    // Get token metadata for input token
-    const outputTokenMetadata = await getTokenMetadata(outputMint);
-    if (!outputTokenMetadata) {
-      console.error(`No metadata found for token ${outputMint}`);
-      throw new Error(`No metadata found for token ${outputMint}`);
-    }
-    
+  public async addOrder(
+    userId: number, 
+    inputMint: string,
+    inputSymbol: string,
+    outputMint: string,
+    outputSymbol: string,
+    outputTokenPrice: number, 
+    inputTokenAmount: number
+  ): Promise<Order> {
     // Create order in database with both mint and symbol
     const order = await createOrder(
       userId,
-      inputMint, 
-      outputTokenMetadata.symbol,
-      outputMint, 
-      price, 
-      amount
+      inputMint,
+      inputSymbol,
+      outputMint,
+      outputSymbol,
+      outputTokenPrice,
+      inputTokenAmount
     );
     
     // Add to active orders
-    if (!this.activeOrders.has(inputMint)) {
-      this.activeOrders.set(inputMint, []);
+    if (!this.activeOrders.has(outputMint)) {
+      this.activeOrders.set(outputMint, []);
     }
-    this.activeOrders.get(inputMint)?.push(order);
+    this.activeOrders.get(outputMint)?.push(order);
     
     // Subscribe to price updates for this symbol and store the callback ID
-    this.subscribeToSymbol(outputTokenMetadata.symbol, order.id);
+    this.subscribeToSymbol(outputSymbol, order.id);
         
     return order;
   }

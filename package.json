@@ -6,7 +6,9 @@
     "dev": "bun run src/index.ts",
     "generate": "drizzle-kit generate:pg",
     "migrate": "bun run src/db/migrate.ts",
-    "db:generate": "bun run src/db/generate.ts"
+    "db:generate": "bun run src/db/generate.ts",
+    "db:push": "drizzle-kit push:pg",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.31.0",

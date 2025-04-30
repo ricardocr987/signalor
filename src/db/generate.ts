@@ -77,8 +77,9 @@ const generateSchema = async () => {
         input_mint TEXT NOT NULL,
         input_symbol TEXT NOT NULL,
         output_mint TEXT NOT NULL,
-        price REAL NOT NULL,
-        amount REAL NOT NULL,
+        output_symbol TEXT NOT NULL,
+        output_token_price REAL NOT NULL,
+        input_token_amount REAL NOT NULL,
         is_active BOOLEAN DEFAULT TRUE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );

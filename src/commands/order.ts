@@ -25,7 +25,7 @@ const orderCommand: Command = {
         }
 
         const orderList = orders.map(order => 
-          `📊 Buy ${order.amount} ${order.outputMint} with ${order.inputMint} when price goes below $${order.price}`
+          `📊 Buy ${order.inputTokenAmount} ${order.inputSymbol} with ${order.outputSymbol} when ${order.outputSymbol} price goes below $${order.outputTokenPrice}`
         ).join('\n\n');
 
         return {
@@ -68,10 +68,10 @@ const orderCommand: Command = {
 
     const inputToken = args[0]; // USDC
     const outputToken = args[1]; // SOL
-    const price = parseFloat(args[2]); // 100
-    const amount = parseFloat(args[3]); // 1
+    const outputTokenPrice = parseFloat(args[2]); // 100
+    const inputTokenAmount = parseFloat(args[3]); // 1
 
-    if (isNaN(price) || isNaN(amount)) {
+    if (isNaN(outputTokenPrice) || isNaN(inputTokenAmount)) {
       return {
         chat_id: userId,
         text: "Invalid price or amount. Please provide valid numbers."
@@ -94,14 +94,16 @@ const orderCommand: Command = {
       await orderManager.addOrder(
         userId,
         inputTokenMetadata.mintAddress,
+        inputTokenMetadata.symbol,
         outputTokenMetadata.mintAddress,
-        price,
-        amount
+        outputTokenMetadata.symbol,
+        outputTokenPrice,
+        inputTokenAmount
       );
       
       return {
         chat_id: userId,
-        text: `✅ Order set to buy ${amount} ${outputToken} with ${inputToken} when price goes below $${price}`
+        text: `✅ Order set to buy ${outputTokenMetadata.symbol} with ${inputTokenAmount} ${inputTokenMetadata.symbol} when ${outputTokenMetadata.symbol} price goes below $${outputTokenPrice}`
       };
     } catch (error) {
       console.error('Error setting order:', error);

@@ -1,6 +1,7 @@
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
 import postgres from 'postgres';
+import * as schema from './schema';
 
 const runMigrations = async () => {
   if (!process.env.DATABASE_URL) {
@@ -11,7 +12,7 @@ const runMigrations = async () => {
 
   // Create a new connection for migrations
   const migrationClient = postgres(process.env.DATABASE_URL, { max: 1 });
-  const db = drizzle(migrationClient);
+  const db = drizzle(migrationClient, { schema });
 
   try {
     await migrate(db, {

@@ -155,8 +155,9 @@ export const createOrder = async (
   inputMint: string,
   inputSymbol: string,
   outputMint: string,
-  price: number,
-  amount: number
+  outputSymbol: string,
+  outputTokenPrice: number,
+  inputTokenAmount: number
 ) => {
   try {
     const dbUser = await ensureUserExists(userId);
@@ -166,13 +167,25 @@ export const createOrder = async (
         inputMint,
         inputSymbol,
         outputMint,
-        price,
-        amount
+        outputSymbol,
+        outputTokenPrice,
+        inputTokenAmount
       })
       .returning();
     return order;
   } catch (error) {
     console.error('Error creating order:', error);
+    throw error;
+  }
+};
+
+export const getOrderById = async (id: number) => {
+  try {
+    return await db.select()
+      .from(schema.orders)
+      .where(eq(schema.orders.id, id));
+  } catch (error) {
+    console.error('Error getting order by id:', error);
     throw error;
   }
 };

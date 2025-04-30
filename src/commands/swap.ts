@@ -29,9 +29,9 @@ const swapCommand: Command = {
         };
       }
 
-      const amount = args[0];
-      const fromToken = args[1];
-      const toToken = args[2];
+      const fromToken = args[0];
+      const toToken = args[1];
+      const amount = args[2];
 
       // Get token metadata
       const fromTokenMetadata = await getTokenMetadata(fromToken);
