@@ -2,7 +2,7 @@
 
 Signalor is a Telegram bot built for the [Vybe Telegram Bot Challenge](https://earn.superteam.fun/listing/vybe-telegram-bot-challenge-dollar5k/) that provides real-time price alerts and monitoring for Solana tokens. The bot leverages the Vybe API to deliver accurate and timely information about token prices, trades, and market movements.
 
-[Watch the demo](https://www.youtube.com/watch?v=pE6AUMxbh0M)
+👉 [Watch the demo](https://www.youtube.com/watch?v=G6W_UFgleWw) 👈
 
 ## 🌟 Features
 
