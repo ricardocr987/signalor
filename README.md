@@ -2,16 +2,15 @@
 
 Signalor is a Telegram bot built for the [Vybe Telegram Bot Challenge](https://earn.superteam.fun/listing/vybe-telegram-bot-challenge-dollar5k/) that provides real-time price alerts and monitoring for Solana tokens. The bot leverages the Vybe API to deliver accurate and timely information about token prices, trades, and market movements.
 
-Demo: https://www.youtube.com/watch?v=tMxPAgMypLQ
+[Watch the demo](https://www.youtube.com/watch?v=pE6AUMxbh0M)
 
 ## 🌟 Features
 
-- **Price Alerts**: Set custom price alerts for any Solana token
-- **Real-time Monitoring**: Get instant notifications when your set conditions are met
-- **Token Information**: Access detailed token data including price, volume, and market stats
-- **Secure Webhook Integration**: Protected communication between Telegram and your server
+- **Price Alerts and Real Time Monitoring**: Set custom price alerts for Solana tokens that has a Pyth price feed
 - **Automated Trading**: Swap instantly with the generated keypair that the server manages for each individual user
-- **Limit Orders**: Set orders to purchase any Solana token when they reach a specific price
+- **Limit Orders**: Set orders to purchase a Solana token when they reach a specific price
+- **Secure Webhook Integration**: Protected communication between Telegram and your server
+- **Token Information**: Access detailed token data including price, volume, and market stats
 - **User-friendly Commands**: Simple and intuitive command interface
 
 ## 📝 Available Commands
@@ -22,12 +21,11 @@ Demo: https://www.youtube.com/watch?v=tMxPAgMypLQ
 | `/alert show` | View your active alerts | `/alert show` |
 | `/alert remove` | Remove all your alerts | `/alert remove` |
 | `/price [TOKEN]` | Get current token price | `/price SOL` |
-| `/balance [WALLET]` | Check wallet balance | `/balance 8x...` |
+| `/balance` | Check wallet balance | `/balance` |
 | `/holders [TOKEN]` | View top token holders | `/holders SOL` |
-| `/trades [TOKEN]` | View recent trades | `/trades SOL` |
-| `/chart [TOKEN]` | Get token price chart | `/chart SOL` |
+| `/trades` | View recent trades | `/trades` |
 | `/swap [TOKEN1] [TOKEN2] [AMOUNT]` | Perform a swap | `/swap SOL USDC 1` |
-| `/order [TOKEN] [SIDE] [PRICE] [AMOUNT]` | Place limit order | `/order SOL buy 100 1` |
+| `/order [INPUT_TOKEN] [OUTPUT_TOKEN] [OUTPUT_TOKEN_PRICE] [INPUT_TOKEN_AMOUNT]` | Place limit order | `/order USDC SOL 120 1` |
 
 ## 🏗️ Technical Architecture
 
