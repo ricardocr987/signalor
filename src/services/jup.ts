@@ -349,4 +349,51 @@ export class JupiterService {
       throw error;
     }
   }
+
+  static async jupiterSwapInstructions(
+    inputToken: string,
+    outputToken: string,
+    amount: number,
+    slippageBps: string,
+    userPublicKey: string
+  ): Promise<JupiterSwapInstructions> {
+    const headers = {
+      'x-api-key': config.JUPITER_API_KEY,
+    };
+
+    try {
+      const params = new URLSearchParams({
+        inputMint: inputToken,
+        outputMint: outputToken,
+        amount: amount.toString(),
+        slippageBps: slippageBps,
+        onlyDirectRoutes: 'true',
+      });
+      const quoteResponse = await ky
+        .get(`https://api.jup.ag/swap/v1/quote?${params}`, { headers })
+        .json<JupiterQuoteResponse>();
+
+      return await this.getSwapInstructions(quoteResponse, userPublicKey);
+    } catch (error: any) {
+      if (
+        error.message?.includes('Request failed with status code 400 Bad Request')
+      ) {
+        // Try again with all routes
+        const params = new URLSearchParams({
+          inputMint: inputToken,
+          outputMint: outputToken,
+          amount: amount.toString(),
+          slippageBps: slippageBps,
+          onlyDirectRoutes: 'false',
+        });
+
+        const quoteResponse = await ky
+          .get(`https://api.jup.ag/swap/v1/quote?${params}`, { headers })
+          .json<JupiterQuoteResponse>();
+
+        return await this.getSwapInstructions(quoteResponse, userPublicKey);
+      }
+      throw Error('Error finding routes');
+    }
+  }
 }

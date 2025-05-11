@@ -1,6 +1,6 @@
 import { getAllActiveOrders, deactivateOrder, createOrder, getUserOrders, getAllUserOrders, getUserByTelegramId, Order, getKeypairByUserId, getTokenMetadata, getUserTelegramId } from '../db/index';
 import { JupiterService } from './jup';
-import { signTransaction, getBase64EncodedWireTransaction } from '@solana/kit';
+import { signTransaction, getBase64EncodedWireTransaction, Address } from '@solana/kit';
 import { createKeyPairFromBytes } from '@solana/keys';
 import bs58 from 'bs58';
 import { Keypair } from '@solana/web3.js';
@@ -11,6 +11,8 @@ import { PriceUpdate } from './price-feed';
 import { config } from '../config';
 import { rpc } from '../solana/rpc';
 import { confirmTransaction } from '../solana/confirm';
+import { prepareTransaction } from '../solana/prepare';
+import { getLookupTables } from '../solana/fetcher/getLookupTables';
 
 class OrderManager {
   private static instance: OrderManager;
@@ -139,20 +141,29 @@ class OrderManager {
         );
 
         // Get Ultra order
-        const orderResponse = await JupiterService.getUltraOrder(
+        const orderResponse = await JupiterService.jupiterSwapInstructions(
           order.inputMint,
           order.outputMint,
-          parsedAmount.toString(),
+          parsedAmount.toNumber(),
+          '100',
           keypair.publicKey
         );
 
-        if (!orderResponse.transaction) {
+        if (!orderResponse.swapInstructions) {
           console.error('Failed to create swap transaction');
           return;
         }
 
         // Convert base64 transaction to bytes
-        const transactionBytes = base64Encoder.encode(orderResponse.transaction);
+        const lookupTableAccounts = await getLookupTables(
+          orderResponse.lookupTableAddresses
+        );
+        const transaction = await prepareTransaction(
+          orderResponse.swapInstructions,
+          keypair.publicKey,
+          lookupTableAccounts
+        );
+        const transactionBytes = base64Encoder.encode(transaction);
         const decodedTx = transactionDecoder.decode(transactionBytes);
 
         // Sign the transaction

@@ -155,11 +155,20 @@ async function simulateAndGetBudget(
   priorityLevel: PriorityLevel
 ): Promise<[IInstruction<string>, IInstruction<string>]> {
   const payer = address(feePayer);
+  const finalInstructions = [
+    getSetComputeUnitLimitInstruction({
+      units: DEFAULT_COMPUTE_UNITS,
+    }),
+    getSetComputeUnitPriceInstruction({
+      microLamports: DEFAULT_PRIORITY_FEE,
+    }),
+    ...instructions,
+  ];
   const message = pipe(
     createTransactionMessage({ version: 0 }),
     (tx) => setTransactionMessageFeePayer(payer, tx),
     (tx) => setTransactionMessageLifetimeUsingBlockhash(latestBlockhash, tx),
-    (tx) => appendTransactionMessageInstructions(instructions, tx)
+    (tx) => appendTransactionMessageInstructions(finalInstructions, tx)
   );
 
   const messageWithLookupTables =
