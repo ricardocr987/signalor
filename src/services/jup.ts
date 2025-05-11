@@ -120,7 +120,7 @@ interface JupiterToken {
 
 export class JupiterService {
   private static readonly BASE_URL = 'https://api.jup.ag/swap/v1';
-  private static readonly ULTRA_BASE_URL = 'https://lite-api.jup.ag/ultra/v1/order';
+  private static readonly ULTRA_BASE_URL = 'https://lite-api.jup.ag/ultra/v1';
   private static readonly TOKEN_BASE_URL = 'https://lite-api.jup.ag/tokens/v1';
 
   static async getQuote(
