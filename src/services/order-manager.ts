@@ -1,6 +1,6 @@
 import { getAllActiveOrders, deactivateOrder, createOrder, getUserOrders, getAllUserOrders, getUserByTelegramId, Order, getKeypairByUserId, getTokenMetadata, getUserTelegramId } from '../db/index';
 import { JupiterService } from './jup';
-import { signTransaction, getBase64EncodedWireTransaction, Address } from '@solana/kit';
+import { signTransaction, getBase64EncodedWireTransaction } from '@solana/kit';
 import { createKeyPairFromBytes } from '@solana/keys';
 import bs58 from 'bs58';
 import { Keypair } from '@solana/web3.js';
@@ -11,8 +11,6 @@ import { PriceUpdate } from './price-feed';
 import { config } from '../config';
 import { rpc } from '../solana/rpc';
 import { confirmTransaction } from '../solana/confirm';
-import { prepareTransaction } from '../solana/prepare';
-import { getLookupTables } from '../solana/fetcher/getLookupTables';
 
 class OrderManager {
   private static instance: OrderManager;
@@ -140,34 +138,21 @@ class OrderManager {
           10 ** inputTokenMetadata.decimals
         );
 
-        // Get jup order  
-        console.log(`OrderManager: Getting jup order for ${order.inputMint} to ${order.outputMint} with amount ${parsedAmount.toNumber()}`);
-        const orderResponse = await JupiterService.jupiterSwapInstructions(
+        // Get Ultra order
+        const orderResponse = await JupiterService.getUltraOrder(
           order.inputMint,
           order.outputMint,
-          parsedAmount.toNumber(),
-          '100',
+          parsedAmount.toString(),
           keypair.publicKey
         );
-        console.log(`OrderManager: Jup order received`, orderResponse);
 
-        if (!orderResponse.swapInstructions) {
+        if (!orderResponse.transaction) {
           console.error('Failed to create swap transaction');
           return;
         }
 
         // Convert base64 transaction to bytes
-        const lookupTableAccounts = await getLookupTables(
-          orderResponse.lookupTableAddresses
-        );
-        console.log(`OrderManager: Lookup table accounts received`, lookupTableAccounts);
-        const transaction = await prepareTransaction(
-          orderResponse.swapInstructions,
-          keypair.publicKey,
-          lookupTableAccounts
-        );
-        console.log(`OrderManager: Transaction prepared`, transaction);
-        const transactionBytes = base64Encoder.encode(transaction);
+        const transactionBytes = base64Encoder.encode(orderResponse.transaction);
         const decodedTx = transactionDecoder.decode(transactionBytes);
 
         // Sign the transaction
@@ -180,7 +165,7 @@ class OrderManager {
 
         // Get the base64 encoded wire transaction
         const wireTransaction = getBase64EncodedWireTransaction(signedTransaction);
-        console.log(`OrderManager: Wire transaction received`, wireTransaction);
+        
         try {
           const signature = await confirmTransaction(wireTransaction);
           if (signature) {

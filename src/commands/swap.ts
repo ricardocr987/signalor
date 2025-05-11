@@ -8,9 +8,6 @@ import bs58 from 'bs58';
 import { Keypair } from '@solana/web3.js';
 import BigNumber from 'bignumber.js';
 import { base64Encoder, transactionDecoder } from '../solana/constants';
-import { prepareTransaction } from '../solana/prepare';
-import { getLookupTables } from '../solana/fetcher/getLookupTables';
-import { confirmTransaction } from '../solana/confirm';
 
 const swapCommand: Command = {
   name: 'swap',
@@ -61,32 +58,22 @@ const swapCommand: Command = {
       }
 
       // Get Ultra order
-      const orderResponse = await JupiterService.jupiterSwapInstructions(
+      const orderResponse = await JupiterService.getUltraOrder(
         fromTokenMetadata.mintAddress,
         toTokenMetadata.mintAddress,
-        parsedAmount.toNumber(),
-        '100',
+        parsedAmount.toString(),
         keypair.publicKey
       );
 
-      if (!orderResponse.swapInstructions) {
-        console.error('Failed to create swap transaction');
+      if (!orderResponse.transaction) {
         return {
           chat_id: userId,
-          text: "Failed to create swap transaction."
+          text: "❌ Failed to create swap transaction. Please try again later."
         };
       }
 
       // Convert base64 transaction to bytes
-      const lookupTableAccounts = await getLookupTables(
-        orderResponse.lookupTableAddresses
-      );
-      const transaction = await prepareTransaction(
-        orderResponse.swapInstructions,
-        keypair.publicKey,
-        lookupTableAccounts
-      );
-      const transactionBytes = base64Encoder.encode(transaction);
+      const transactionBytes = base64Encoder.encode(orderResponse.transaction);
       const decodedTx = transactionDecoder.decode(transactionBytes);
 
       // Sign the transaction
@@ -99,23 +86,26 @@ const swapCommand: Command = {
 
       // Get the base64 encoded wire transaction
       const wireTransaction = getBase64EncodedWireTransaction(signedTransaction);
-      
-      try {
-        const signature = await confirmTransaction(wireTransaction);
-        console.log(`Successfully executed swap ${signature}`);
-        const outAmount = new BigNumber(orderResponse.quoteResponse.outAmount).dividedBy(10 ** toTokenMetadata.decimals);
 
+      // Execute the swap
+      const executeResponse = await JupiterService.executeUltraOrder(
+        wireTransaction,
+        orderResponse.requestId
+      );
+
+      if (executeResponse.status !== 'Success') {
         return {
           chat_id: userId,
-          text: `✅ Swap executed successfully!\n\nFrom: ${amount} ${fromToken}\nTo: ${outAmount.toString()} ${toToken}\n\nTransaction: https://solscan.io/tx/${signature}`
+          text: `❌ Swap failed: ${executeResponse.error || 'Unknown error'}`
         };
-      } catch (error) {
-        console.error(`Error confirming transaction:`, error);
-        return {
-          chat_id: userId,
-          text: `❌ Swap failed: ${error || 'Unknown error'}`
-        }
       }
+
+      const outAmount = new BigNumber(orderResponse.outAmount).dividedBy(10 ** toTokenMetadata.decimals);
+
+      return {
+        chat_id: userId,
+        text: `✅ Swap executed successfully!\n\nFrom: ${amount} ${fromToken}\nTo: ${outAmount.toString()} ${toToken}\n\nTransaction: https://solscan.io/tx/${executeResponse.signature}`
+      };
     } catch (error) {
       console.error('Error executing swap:', error);
       return {
