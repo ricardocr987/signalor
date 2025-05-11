@@ -140,7 +140,8 @@ class OrderManager {
           10 ** inputTokenMetadata.decimals
         );
 
-        // Get Ultra order
+        // Get jup order  
+        console.log(`OrderManager: Getting jup order for ${order.inputMint} to ${order.outputMint} with amount ${parsedAmount.toNumber()}`);
         const orderResponse = await JupiterService.jupiterSwapInstructions(
           order.inputMint,
           order.outputMint,
@@ -148,6 +149,7 @@ class OrderManager {
           '100',
           keypair.publicKey
         );
+        console.log(`OrderManager: Jup order received`, orderResponse);
 
         if (!orderResponse.swapInstructions) {
           console.error('Failed to create swap transaction');
@@ -158,11 +160,13 @@ class OrderManager {
         const lookupTableAccounts = await getLookupTables(
           orderResponse.lookupTableAddresses
         );
+        console.log(`OrderManager: Lookup table accounts received`, lookupTableAccounts);
         const transaction = await prepareTransaction(
           orderResponse.swapInstructions,
           keypair.publicKey,
           lookupTableAccounts
         );
+        console.log(`OrderManager: Transaction prepared`, transaction);
         const transactionBytes = base64Encoder.encode(transaction);
         const decodedTx = transactionDecoder.decode(transactionBytes);
 
@@ -176,7 +180,7 @@ class OrderManager {
 
         // Get the base64 encoded wire transaction
         const wireTransaction = getBase64EncodedWireTransaction(signedTransaction);
-        
+        console.log(`OrderManager: Wire transaction received`, wireTransaction);
         try {
           const signature = await confirmTransaction(wireTransaction);
           if (signature) {
